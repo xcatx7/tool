@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SVG 亮光掃過效果編輯器</title>
+<style>
+  :root{
+    --bg:#15171c;
+    --panel:#1c1f26;
+    --panel2:#22262f;
+    --line:#2d3038;
+    --text:#e8e9ec;
+    --sub:#8a8f9b;
+    --accent:#f0ad43;
+    --accent2:#ea962e;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang TC","Microsoft JhengHei",sans-serif;
+    font-size:14px;
+  }
+  header{
+    padding:20px 24px 16px;
+    border-bottom:1px solid var(--line);
+  }
+  header h1{
+    margin:0 0 4px;
+    font-size:18px;
+    font-weight:600;
+    letter-spacing:.2px;
+  }
+  header p{
+    margin:0;
+    color:var(--sub);
+    font-size:13px;
+  }
+  .layout{
+    display:grid;
+    grid-template-columns:340px 1fr;
+    gap:0;
+    min-height:calc(100vh - 78px);
+  }
+  @media (max-width: 860px){
+    .layout{ grid-template-columns:1fr; }
+  }
+  .controls{
+    border-right:1px solid var(--line);
+    padding:20px;
+    overflow-y:auto;
+    max-height:calc(100vh - 78px);
+  }
+  .group{
+    margin-bottom:22px;
+    padding-bottom:18px;
+    border-bottom:1px solid var(--line);
+  }
+  .group:last-child{ border-bottom:none; }
+  .group-title{
+    font-size:12px;
+    font-weight:600;
+    color:var(--accent);
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    margin-bottom:12px;
+  }
+  .row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .row label{
+    color:var(--sub);
+    font-size:12.5px;
+    flex-shrink:0;
+    min-width:76px;
+  }
+  .row .val{
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--text);
+    min-width:52px;
+    text-align:right;
+    flex-shrink:0;
+  }
+  input[type="range"]{
+    flex:1;
+    accent-color:var(--accent);
+  }
+  input[type="number"]{
+    width:70px;
+    background:var(--panel2);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:6px;
+    padding:5px 7px;
+    font-family:var(--mono);
+    font-size:12.5px;
+  }
+  input[type="color"]{
+    width:38px;
+    height:28px;
+    padding:0;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:none;
+    cursor:pointer;
+  }
+  .two-col{
+    display:flex;
+    gap:8px;
+  }
+  .two-col > div{ flex:1; }
+  .hint{
+    color:var(--sub);
+    font-size:11px;
+    line-height:1.5;
+    margin-top:4px;
+  }
+  textarea{
+    width:100%;
+    background:var(--panel2);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:6px;
+    padding:8px;
+    font-family:var(--mono);
+    font-size:11.5px;
+    line-height:1.5;
+    resize:vertical;
+  }
+  #shapeInput{ height:90px; }
+  .checkbox-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .checkbox-row label{ color:var(--sub); font-size:12.5px; }
+  .main{
+    padding:24px;
+    overflow-y:auto;
+  }
+  .preview-card{
+    background:
+      linear-gradient(45deg, #2a2d34 25%, transparent 25%) -8px 0/16px 16px,
+      linear-gradient(-45deg, #2a2d34 25%, transparent 25%) -8px 0/16px 16px,
+      linear-gradient(45deg, transparent 75%, #2a2d34 75%) -8px 0/16px 16px,
+      linear-gradient(-45deg, transparent 75%, #2a2d34 75%) -8px 0/16px 16px,
+      #232630;
+    border:1px solid var(--line);
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:40px;
+    min-height:320px;
+  }
+  #previewHost{
+    max-width:100%;
+    max-height:60vh;
+  }
+  #previewHost svg{
+    width:100%;
+    height:auto;
+    max-height:60vh;
+    display:block;
+  }
+  .toolbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-top:22px;
+    margin-bottom:8px;
+  }
+  .toolbar h2{
+    font-size:13px;
+    font-weight:600;
+    color:var(--sub);
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    margin:0;
+  }
+  button{
+    background:var(--panel2);
+    border:1px solid var(--line);
+    color:var(--text);
+    padding:7px 14px;
+    border-radius:6px;
+    font-size:12.5px;
+    cursor:pointer;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  button:hover{
+    border-color:var(--accent2);
+    color:var(--accent);
+  }
+  #codeOut{
+    height:260px;
+    font-size:11px;
+  }
+  .badge{
+    display:inline-block;
+    background:var(--panel2);
+    border:1px solid var(--line);
+    color:var(--sub);
+    font-family:var(--mono);
+    font-size:10.5px;
+    padding:2px 6px;
+    border-radius:4px;
+    margin-left:8px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SVG 亮光掃過效果編輯器</h1>
+  <p>調整尺寸、漸層顏色、角度、秒數與距離，即時預覽，並複製產生好的 SVG 套用到不同物件上。</p>
+</header>
+
+<div class="layout">
+  <div class="controls">
+
+    <div class="group">
+      <div class="group-title">主體尺寸</div>
+      <div class="two-col">
+        <div>
+          <div class="row"><label>寬 width</label></div>
+          <input type="number" id="vbW" value="212" min="1">
+        </div>
+        <div>
+          <div class="row"><label>高 height</label></div>
+          <input type="number" id="vbH" value="172" min="1">
+        </div>
+      </div>
+      <div class="hint">對應 viewBox 大小，需與貼入的圖形座標系統一致。</div>
+    </div>
+
+    <div class="group">
+      <div class="group-title">貼入圖形</div>
+      <textarea id="shapeInput">&lt;path d="M97.5,0l67.2,169.7h-27.9l-17.2-45.5H45.1l-17.2,45.5H0L67.2,0h30.3ZM82.8,22.4h-.8c-8.4,25.8-7.7,21-30.3,81.1h61.5c-22.2-58.9-22.6-57.2-30.3-81.1h0ZM181.4,155.8v14.6h-5.7v-28.3h5.7v5.4c2-6.1,7.5-7.7,12.6-4.6l-2.1,5.2c-5.1-3.6-10.8.3-10.5,7.7h0ZM204.4,131.6v10.6h6.3v4.4h-6.3v16.1c-.1,2.9,1,4.4,3.4,4.2,1,0,1.9-.2,2.7-.6l.9,3.3c-1.3,1-3.1,1.5-5.5,1.5-4.9.1-7.4-2.4-7.2-7.5v-17.1h-4.6v-4.4h4.6v-9l5.7-1.5h0Z" /&gt;</textarea>
+      <div class="hint">貼上一個或多個 &lt;path&gt;/&lt;g&gt; 等內容（會自動移除內建 fill，改用下方顏色控制）。</div>
+    </div>
+
+    <div class="group">
+      <div class="group-title">底色（主體本身）</div>
+      <div class="checkbox-row">
+        <input type="checkbox" id="baseGradToggle" checked>
+        <label for="baseGradToggle">使用漸層底色（否則使用單色）</label>
+      </div>
+      <div class="two-col">
+        <div>
+          <div class="row"><label>顏色 1</label><input type="color" id="baseColor1" value="#f7cd5e"></div>
+        </div>
+        <div>
+          <div class="row"><label>顏色 2</label><input type="color" id="baseColor2" value="#e67900"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-title">漸層顏色（亮光）</div>
+      <div class="row">
+        <label>顏色</label>
+        <input type="color" id="shimmerColor" value="#ffffff">
+        <span class="val" id="shimmerColorVal">#ffffff</span>
+      </div>
+      <div class="row">
+        <label>不透明度</label>
+        <input type="range" id="shimmerOpacity" min="0" max="1" step="0.05" value="1">
+        <span class="val" id="shimmerOpacityVal">1.0</span>
+      </div>
+      <div class="row">
+        <label>光帶寬度</label>
+        <input type="range" id="bandWidth" min="10" max="600" step="5" value="280">
+        <span class="val" id="bandWidthVal">280</span>
+      </div>
+      <div class="hint">光帶寬度＝亮部到兩側透明的漸層長度，數字越大光線越柔、越寬。</div>
+    </div>
+
+    <div class="group">
+      <div class="group-title">角度</div>
+      <div class="row">
+        <label>角度</label>
+        <input type="range" id="angle" min="0" max="360" step="1" value="45">
+        <span class="val" id="angleVal">45°</span>
+      </div>
+      <div class="hint">0° 為由左往右，45° 為原本範例的左上到右下斜角。</div>
+    </div>
+
+    <div class="group">
+      <div class="group-title">秒數</div>
+      <div class="row">
+        <label>動畫秒數</label>
+        <input type="range" id="duration" min="0.5" max="10" step="0.1" value="4">
+        <span class="val" id="durationVal">4.0s</span>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="group-title">距離</div>
+      <div class="row">
+        <label>掃過距離</label>
+        <input type="range" id="distance" min="50" max="3000" step="10" value="900">
+        <span class="val" id="distanceVal">900</span>
+      </div>
+      <div class="hint">數字越大，光帶從畫面外進入、通過主體、再離開所需的路徑越長（大部分時間會在畫面外，這是正常的，模擬原始效果的間歇閃光感）。</div>
+    </div>
+
+  </div>
+
+  <div class="main">
+    <div class="preview-card">
+      <div id="previewHost"></div>
+    </div>
+
+    <div class="toolbar">
+      <h2>產生的 SVG 原始碼<span class="badge">可直接複製貼上</span></h2>
+      <button id="copyBtn">複製程式碼</button>
+    </div>
+    <textarea id="codeOut" readonly></textarea>
+  </div>
+</div>
+
+<script>
+const els = {
+  vbW: document.getElementById('vbW'),
+  vbH: document.getElementById('vbH'),
+  shapeInput: document.getElementById('shapeInput'),
+  baseGradToggle: document.getElementById('baseGradToggle'),
+  baseColor1: document.getElementById('baseColor1'),
+  baseColor2: document.getElementById('baseColor2'),
+  shimmerColor: document.getElementById('shimmerColor'),
+  shimmerColorVal: document.getElementById('shimmerColorVal'),
+  shimmerOpacity: document.getElementById('shimmerOpacity'),
+  shimmerOpacityVal: document.getElementById('shimmerOpacityVal'),
+  bandWidth: document.getElementById('bandWidth'),
+  bandWidthVal: document.getElementById('bandWidthVal'),
+  angle: document.getElementById('angle'),
+  angleVal: document.getElementById('angleVal'),
+  duration: document.getElementById('duration'),
+  durationVal: document.getElementById('durationVal'),
+  distance: document.getElementById('distance'),
+  distanceVal: document.getElementById('distanceVal'),
+  previewHost: document.getElementById('previewHost'),
+  codeOut: document.getElementById('codeOut'),
+  copyBtn: document.getElementById('copyBtn'),
+};
+
+function hexToRgb(hex){
+  hex = hex.replace('#','');
+  if(hex.length === 3){ hex = hex.split('').map(c=>c+c).join(''); }
+  const num = parseInt(hex,16);
+  return { r:(num>>16)&255, g:(num>>8)&255, b:num&255 };
+}
+
+function stripFill(svgFragment){
+  // remove explicit fill="..." / fill='...' attributes so <use fill="..."> can take over
+  return svgFragment.replace(/\sfill\s*=\s*("[^"]*"|'[^']*')/gi, '');
+}
+
+function round(n, d=2){
+  const f = Math.pow(10,d);
+  return Math.round(n*f)/f;
+}
+
+function buildSVG(){
+  const w = parseFloat(els.vbW.value) || 212;
+  const h = parseFloat(els.vbH.value) || 172;
+  const rawShape = stripFill(els.shapeInput.value.trim());
+
+  const angleDeg = parseFloat(els.angle.value);
+  const rad = angleDeg * Math.PI / 180;
+  const dirX = Math.cos(rad);
+  const dirY = Math.sin(rad);
+
+  const bandWidth = parseFloat(els.bandWidth.value);
+  const distance = parseFloat(els.distance.value);
+  const duration = parseFloat(els.duration.value);
+
+  const cx = w/2, cy = h/2;
+  const x1 = round(cx - dirX*bandWidth/2);
+  const y1 = round(cy - dirY*bandWidth/2);
+  const x2 = round(cx + dirX*bandWidth/2);
+  const y2 = round(cy + dirY*bandWidth/2);
+
+  const tStart = `${round(-dirX*distance)} ${round(-dirY*distance)}`;
+  const tEnd = `${round(dirX*distance)} ${round(dirY*distance)}`;
+
+  const { r, g, b } = hexToRgb(els.shimmerColor.value);
+  const opacity = parseFloat(els.shimmerOpacity.value);
+  const c0 = `rgba(${r},${g},${b},0)`;
+  const c1 = `rgba(${r},${g},${b},${opacity})`;
+
+  const useGrad = els.baseGradToggle.checked;
+  const baseFill = useGrad ? 'url(#baseGrad)' : els.baseColor1.value;
+
+  const baseGradBlock = useGrad ? `
+    <linearGradient id="baseGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0" stop-color="${els.baseColor1.value}" />
+      <stop offset="1" stop-color="${els.baseColor2.value}" />
+    </linearGradient>` : '';
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">
+  <defs>
+    <g id="shape">
+      ${rawShape}
+    </g>${baseGradBlock}
+    <linearGradient id="shimmer" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="${c0}" />
+      <stop offset=".5" stop-color="${c1}" />
+      <stop offset="1" stop-color="${c0}" />
+      <animateTransform attributeName="gradientTransform" type="translate"
+        values="${tStart}; ${tEnd}" dur="${duration}s" repeatCount="indefinite" />
+    </linearGradient>
+  </defs>
+  <use href="#shape" fill="${baseFill}" />
+  <use href="#shape" fill="url(#shimmer)" />
+</svg>`;
+
+  return svg;
+}
+
+function render(){
+  // sync value labels
+  els.shimmerColorVal.textContent = els.shimmerColor.value;
+  els.shimmerOpacityVal.textContent = parseFloat(els.shimmerOpacity.value).toFixed(2);
+  els.bandWidthVal.textContent = els.bandWidth.value;
+  els.angleVal.textContent = els.angle.value + '°';
+  els.durationVal.textContent = parseFloat(els.duration.value).toFixed(1) + 's';
+  els.distanceVal.textContent = els.distance.value;
+
+  const svg = buildSVG();
+  els.codeOut.value = svg;
+  // re-inject to restart SMIL animation
+  els.previewHost.innerHTML = svg;
+}
+
+Object.values(els).forEach(el=>{
+  if(el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')){
+    el.addEventListener('input', render);
+  }
+});
+
+els.copyBtn.addEventListener('click', async ()=>{
+  try{
+    await navigator.clipboard.writeText(els.codeOut.value);
+    els.copyBtn.textContent = '已複製 ✓';
+    setTimeout(()=>{ els.copyBtn.textContent = '複製程式碼'; }, 1500);
+  }catch(e){
+    els.codeOut.select();
+    document.execCommand('copy');
+  }
+});
+
+render();
+</script>
+
+</body>
+</html>
