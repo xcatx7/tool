@@ -1,11 +1,11 @@
 [
   {
-    "name": "svg-noise",
+    "name": "svg-雜訊",
     "date": "2026-08-31",
     "path": "tools/svg-noise/index.html"
   },
   {
-    "name": "svg-light",
+    "name": "svg-光線",
     "date": "2026-08-31",
     "path": "tools/svg-light/index.html"
   },
