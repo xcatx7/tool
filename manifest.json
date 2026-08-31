@@ -1,17 +1,17 @@
 [
   {
-    "name": "svg-雜訊",
+    "name": "svg-noise",
     "date": "2026-08-31",
     "path": "tools/svg-noise/index.html"
+  },
+  {
+    "name": "svg-light",
+    "date": "2026-08-31",
+    "path": "tools/svg-light/index.html"
   },
   {
     "name": "範例工具（可自訂顯示名稱）",
     "date": "2026-08-31",
     "path": "tools/example-tool/index.html"
-  },
-  {
-    "name": "svg-光線",
-    "date": "2026-08-25",
-    "path": "tools/svg-light/index.html"
   }
 ]
