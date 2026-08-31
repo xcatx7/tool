@@ -1,5 +1,10 @@
 [
   {
+    "name": "svg粒子背景",
+    "date": "2026-08-31",
+    "path": "tools/svg粒子背景/index.html"
+  },
+  {
     "name": "範例工具（可自訂顯示名稱）",
     "date": "2026-08-31",
     "path": "tools/example-tool/index.html"
