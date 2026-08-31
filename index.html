@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>工具庫</title>
+<style>
+  :root {
+    --bg: #14161a;
+    --panel: #1c1f26;
+    --line: #2a2e37;
+    --text: #e7e9ee;
+    --muted: #8b909c;
+    --accent: #5eead4;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  }
+  header {
+    padding: 48px 24px 24px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 4px;
+  }
+  header p {
+    color: var(--muted);
+    font-size: 14px;
+    margin: 0;
+  }
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 24px 64px;
+  }
+  #list {
+    border-top: 1px solid var(--line);
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 4px;
+    border-bottom: 1px solid var(--line);
+    text-decoration: none;
+    color: var(--text);
+  }
+  .row:hover {
+    background: var(--panel);
+  }
+  .row .name {
+    font-size: 15px;
+  }
+  .row .date {
+    font-size: 13px;
+    color: var(--muted);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .empty, .error {
+    color: var(--muted);
+    font-size: 14px;
+    padding: 24px 4px;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>工具庫</h1>
+    <p>之前生成的工具都放在這裡，點名稱即可開啟。</p>
+  </header>
+  <main>
+    <div id="list"></div>
+  </main>
+
+  <script>
+    fetch("manifest.json")
+      .then((res) => {
+        if (!res.ok) throw new Error("manifest.json 讀取失敗");
+        return res.json();
+      })
+      .then((tools) => {
+        const list = document.getElementById("list");
+        if (!tools.length) {
+          list.innerHTML = '<div class="empty">還沒有工具，先執行 generate-manifest.js。</div>';
+          return;
+        }
+        tools
+          .slice()
+          .sort((a, b) => (a.date < b.date ? 1 : -1))
+          .forEach((tool) => {
+            const a = document.createElement("a");
+            a.className = "row";
+            a.href = tool.path;
+            a.innerHTML = `<span class="name">${tool.name}</span><span class="date">${tool.date}</span>`;
+            list.appendChild(a);
+          });
+      })
+      .catch((err) => {
+        document.getElementById("list").innerHTML =
+          '<div class="error">' + err.message + '（用 file:// 直接打開會被瀏覽器擋掉 fetch，請用本機伺服器或 GitHub Pages 開啟）</div>';
+      });
+  </script>
+</body>
+</html>

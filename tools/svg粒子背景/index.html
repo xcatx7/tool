@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>金色顆粒紋理調整器</title>
+<style>
+  body { font-family: -apple-system, "PingFang TC", sans-serif; background: #1a1a1a; color: #eee; padding: 24px; }
+  .wrap { display: flex; gap: 32px; max-width: 900px; margin: 0 auto; flex-wrap: wrap; }
+  .preview { flex: 0 0 320px; }
+  .preview svg { width: 320px; height: 320px; border-radius: 8px; display: block; }
+  .controls { flex: 1; min-width: 280px; }
+  label { display: block; margin-top: 16px; font-size: 13px; color: #aaa; }
+  .row { display: flex; justify-content: space-between; align-items: center; }
+  .row span { font-family: monospace; color: #f2d34e; }
+  input[type=range] { width: 100%; margin-top: 6px; }
+  button { margin-top: 20px; background: #333; color: #fff; border: 1px solid #555; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  button:hover { background: #444; }
+  textarea { width: 100%; height: 120px; margin-top: 12px; font-family: monospace; font-size: 11px; background: #111; color: #9f9; border: 1px solid #333; border-radius: 6px; padding: 8px; box-sizing: border-box; }
+  h2 { font-size: 15px; font-weight: 500; margin-top: 24px; color: #ccc; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="preview">
+    <svg id="svgOut" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="goldGrain" x="0%" y="0%" width="100%" height="100%">
+          <feTurbulence id="turb" type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="11" stitchTiles="stitch" result="noise"/>
+          <feColorMatrix in="noise" type="matrix"
+            values="0.33 0.33 0.33 0 0
+                    0.33 0.33 0.33 0 0
+                    0.33 0.33 0.33 0 0
+                    0    0    0    0 1" result="gray"/>
+          <feColorMatrix id="colorize" in="gray" type="matrix"
+            values="0.361 0 0 0 0.713
+                    0    0.483 0 0 0.526
+                    0    0    0.614 0 0.073
+                    0    0    0    0 1"/>
+        </filter>
+        <linearGradient id="shadeGrad" x1="0" y1="0" x2="1" y2="0">
+          <stop id="stopA" offset="0%" stop-color="#000000"/>
+          <stop id="stopB" offset="100%" stop-color="#ffffff"/>
+        </linearGradient>
+      </defs>
+      <rect width="400" height="400" filter="url(#goldGrain)"/>
+      <rect id="shadeRect" width="400" height="400" fill="url(#shadeGrad)" style="mix-blend-mode:overlay" opacity="0.5"/>
+    </svg>
+  </div>
+
+  <div class="controls">
+    <label class="row">顆粒細碎度 baseFrequency <span id="vFreq">0.85</span></label>
+    <input type="range" id="freq" min="0.2" max="2" step="0.01" value="0.85">
+
+    <label class="row">層次感 numOctaves <span id="vOct">2</span></label>
+    <input type="range" id="oct" min="1" max="5" step="1" value="2">
+
+    <label class="row">對比度(顆粒明暗差) <span id="vContrast">1.0</span></label>
+    <input type="range" id="contrast" min="0.2" max="2.5" step="0.05" value="1">
+
+    <label class="row">整體亮度 <span id="vBright">0</span></label>
+    <input type="range" id="bright" min="-0.3" max="0.3" step="0.01" value="0">
+
+    <label class="row" style="margin-top:24px;border-top:1px solid #333;padding-top:16px;">
+      <input type="checkbox" id="independentMode" style="width:auto;margin-right:6px;">
+      獨立色版模式(RGB 互不相關的彩色靜電雜訊)
+    </label>
+
+    <div id="duotoneControls">
+      <label class="row">暗部顆粒色</label>
+      <input type="color" id="shadowColor" value="#b68613" style="width:100%;height:32px;">
+
+      <label class="row">亮部顆粒色</label>
+      <input type="color" id="highlightColor" value="#fffab0" style="width:100%;height:32px;">
+    </div>
+
+    <div id="independentControls" style="display:none;">
+      <label class="row">平均色(整體基底色調)</label>
+      <input type="color" id="meanColor" value="#ece7d7" style="width:100%;height:32px;">
+
+      <label class="row">雜訊強度 <span id="vIntensity">0.20</span></label>
+      <input type="range" id="intensity" min="0" max="1" step="0.01" value="0.20">
+
+      <label class="row">R 色版強度 <span id="vWR">1.0</span></label>
+      <input type="range" id="wR" min="0" max="2" step="0.05" value="1">
+      <label class="row">G 色版強度 <span id="vWG">1.0</span></label>
+      <input type="range" id="wG" min="0" max="2" step="0.05" value="1">
+      <label class="row">B 色版強度 <span id="vWB">1.0</span></label>
+      <input type="range" id="wB" min="0" max="2" step="0.05" value="1">
+    </div>
+
+    <button id="randSeed">換一個隨機顆粒</button>
+
+    <h2>黑白漸層疊層(覆蓋)</h2>
+    <label class="row">漸層角度 <span id="vAngle">0</span>°</label>
+    <input type="range" id="angle" min="0" max="360" step="1" value="0">
+
+    <label class="row">疊層透明度 <span id="vShadeOpacity">0.5</span></label>
+    <input type="range" id="shadeOpacity" min="0" max="1" step="0.01" value="0.5">
+
+    <label class="row">黑端位置 <span id="vBlackStop">0</span>%</label>
+    <input type="range" id="blackStop" min="0" max="100" step="1" value="0">
+
+    <label class="row">白端位置 <span id="vWhiteStop">100</span>%</label>
+    <input type="range" id="whiteStop" min="0" max="100" step="1" value="100">
+
+    <h2>目前完整 SVG 濾鏡程式碼</h2>
+    <textarea id="code" readonly></textarea>
+  </div>
+</div>
+
+<script>
+const freqEl = document.getElementById('freq');
+const octEl = document.getElementById('oct');
+const contrastEl = document.getElementById('contrast');
+const brightEl = document.getElementById('bright');
+const angleEl = document.getElementById('angle');
+const shadeOpacityEl = document.getElementById('shadeOpacity');
+const blackStopEl = document.getElementById('blackStop');
+const whiteStopEl = document.getElementById('whiteStop');
+const shadowColorEl = document.getElementById('shadowColor');
+const highlightColorEl = document.getElementById('highlightColor');
+const independentModeEl = document.getElementById('independentMode');
+const meanColorEl = document.getElementById('meanColor');
+const intensityEl = document.getElementById('intensity');
+const wREl = document.getElementById('wR');
+const wGEl = document.getElementById('wG');
+const wBEl = document.getElementById('wB');
+const duotoneControls = document.getElementById('duotoneControls');
+const independentControls = document.getElementById('independentControls');
+const turb = document.getElementById('turb');
+const colorize = document.getElementById('colorize');
+const shadeGrad = document.getElementById('shadeGrad');
+const shadeRect = document.getElementById('shadeRect');
+const stopA = document.getElementById('stopA');
+const stopB = document.getElementById('stopB');
+const code = document.getElementById('code');
+
+function hexToRgb01(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+}
+
+function update() {
+  const freq = parseFloat(freqEl.value);
+  const oct = parseInt(octEl.value);
+  const contrast = parseFloat(contrastEl.value);
+  const bright = parseFloat(brightEl.value);
+
+  document.getElementById('vFreq').textContent = freq.toFixed(2);
+  document.getElementById('vOct').textContent = oct;
+  document.getElementById('vContrast').textContent = contrast.toFixed(2);
+  document.getElementById('vBright').textContent = bright.toFixed(2);
+
+  turb.setAttribute('baseFrequency', freq);
+  turb.setAttribute('numOctaves', oct);
+
+  const mode = independentModeEl.checked;
+  let matrix, grayLine, colorizeIn;
+
+  if (mode) {
+    // 獨立色版模式:R/G/B 各自吃原始 noise(未經灰階平均),彼此不相關
+    const mean = hexToRgb01(meanColorEl.value);
+    const weights = [parseFloat(wREl.value), parseFloat(wGEl.value), parseFloat(wBEl.value)];
+    document.getElementById('vIntensity').textContent = intensityEl.value;
+    document.getElementById('vWR').textContent = weights[0].toFixed(2);
+    document.getElementById('vWG').textContent = weights[1].toFixed(2);
+    document.getElementById('vWB').textContent = weights[2].toFixed(2);
+    const intensity = parseFloat(intensityEl.value);
+    const chans = ['R','G','B'];
+    const rows = [];
+    chans.forEach((c, i) => {
+      const half = intensity * 0.6 * weights[i] * contrast;
+      const mid = mean[i] + bright;
+      const a = 2 * half;
+      const e = mid - half;
+      const row = [0,0,0,0,0];
+      row[i] = a.toFixed(3);
+      row[4] = e.toFixed(3);
+      rows.push(row.join(' '));
+    });
+    rows.push('0 0 0 0 1');
+    matrix = rows.join('\n            ');
+    colorizeIn = 'noise';
+    duotoneControls.style.display = 'none';
+    independentControls.style.display = 'block';
+  } else {
+    // 同調模式:先把 noise 平均成灰階,再用灰階去驅動雙色插值(暗部顆粒色 ↔ 亮部顆粒色)
+    const shadow = hexToRgb01(shadowColorEl.value);
+    const highlight = hexToRgb01(highlightColorEl.value);
+    const chans = ['R','G','B'];
+    const rows = [];
+    chans.forEach((c, i) => {
+      const mid = (shadow[i] + highlight[i]) / 2 + bright;
+      const half = ((highlight[i] - shadow[i]) / 2) * contrast;
+      const a = 2 * half;
+      const e = mid - half;
+      const row = [0,0,0,0,0];
+      row[i] = a.toFixed(3);
+      row[4] = e.toFixed(3);
+      rows.push(row.join(' '));
+    });
+    rows.push('0 0 0 0 1');
+    matrix = rows.join('\n            ');
+    colorizeIn = 'gray';
+    duotoneControls.style.display = 'block';
+    independentControls.style.display = 'none';
+  }
+  colorize.setAttribute('in', colorizeIn);
+  colorize.setAttribute('values', matrix);
+
+  // 黑白漸層角度與透明度
+  const angle = parseFloat(angleEl.value);
+  const shadeOpacity = parseFloat(shadeOpacityEl.value);
+  const blackStop = parseFloat(blackStopEl.value);
+  const whiteStop = parseFloat(whiteStopEl.value);
+  document.getElementById('vAngle').textContent = angle;
+  document.getElementById('vShadeOpacity').textContent = shadeOpacity.toFixed(2);
+  document.getElementById('vBlackStop').textContent = blackStop;
+  document.getElementById('vWhiteStop').textContent = whiteStop;
+
+  const rad = angle * Math.PI / 180;
+  const x1 = (0.5 - 0.5 * Math.cos(rad)).toFixed(4);
+  const y1 = (0.5 - 0.5 * Math.sin(rad)).toFixed(4);
+  const x2 = (0.5 + 0.5 * Math.cos(rad)).toFixed(4);
+  const y2 = (0.5 + 0.5 * Math.sin(rad)).toFixed(4);
+  shadeGrad.setAttribute('x1', x1);
+  shadeGrad.setAttribute('y1', y1);
+  shadeGrad.setAttribute('x2', x2);
+  shadeGrad.setAttribute('y2', y2);
+  stopA.setAttribute('offset', blackStop + '%');
+  stopB.setAttribute('offset', whiteStop + '%');
+  shadeRect.setAttribute('opacity', shadeOpacity);
+
+  code.value = `<filter id="goldGrain" x="0%" y="0%" width="100%" height="100%">
+  <feTurbulence type="fractalNoise" baseFrequency="${freq}" numOctaves="${oct}" seed="${turb.getAttribute('seed')}" stitchTiles="stitch" result="noise"/>${mode ? '' : `
+  <feColorMatrix in="noise" type="matrix"
+    values="0.33 0.33 0.33 0 0
+            0.33 0.33 0.33 0 0
+            0.33 0.33 0.33 0 0
+            0    0    0    0 1" result="gray"/>`}
+  <feColorMatrix in="${colorizeIn}" type="matrix"
+    values="${matrix}"
+    result="colorized"/>
+  <feComposite in="colorized" in2="SourceAlpha" operator="in"/>
+</filter>${mode ? '\n<!-- 獨立色版模式:R/G/B 直接吃 feTurbulence 原始輸出,三色版本來就互不相關,不經灰階平均 -->' : ''}
+
+<linearGradient id="shadeGrad" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}">
+  <stop offset="${blackStop}%" stop-color="#000000"/>
+  <stop offset="${whiteStop}%" stop-color="#ffffff"/>
+</linearGradient>
+
+<!-- 套用範例:先貼上方 filter 與 gradient 到 <defs>,再這樣用 -->
+<g>
+  <path d="你的 path" filter="url(#goldGrain)"/>
+  <path d="你的 path" fill="url(#shadeGrad)" style="mix-blend-mode:overlay" opacity="${shadeOpacity}"/>
+</g>`;
+}
+
+[freqEl, octEl, contrastEl, brightEl, shadowColorEl, highlightColorEl, independentModeEl, meanColorEl, intensityEl, wREl, wGEl, wBEl, angleEl, shadeOpacityEl, blackStopEl, whiteStopEl].forEach(el => el.addEventListener('input', update));
+document.getElementById('randSeed').addEventListener('click', () => {
+  turb.setAttribute('seed', Math.floor(Math.random() * 1000));
+  update();
+});
+
+update();
+</script>
+</body>
+</html>
