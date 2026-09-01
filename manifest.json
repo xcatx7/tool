@@ -1,5 +1,10 @@
 [
   {
+    "name": "svg-筆畫文字",
+    "date": "2026-09-01",
+    "path": "tools/svg-textline/index.html"
+  },
+  {
     "name": "svg-水波濾鏡",
     "date": "2026-08-31",
     "path": "tools/svg-wate/index.html"
