@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>布紋調整器</title>
+<style>
+  body { font-family: -apple-system, "PingFang TC", sans-serif; background: #1a1a1a; color: #eee; padding: 24px; }
+  .wrap { display: flex; gap: 32px; max-width: 900px; margin: 0 auto; flex-wrap: wrap; }
+  .preview { flex: 0 0 320px; }
+  .preview svg { width: 320px; height: 320px; border-radius: 4px; display: block; }
+  .controls { flex: 1; min-width: 280px; }
+  label { display: block; margin-top: 14px; font-size: 13px; color: #aaa; }
+  .row { display: flex; justify-content: space-between; align-items: center; }
+  .row span { font-family: monospace; color: #a8c4d9; }
+  input[type=range] { width: 100%; margin-top: 6px; }
+  input[type=color] { border: none; background: none; cursor: pointer; }
+  button { margin-top: 20px; background: #333; color: #fff; border: 1px solid #555; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  button:hover { background: #444; }
+  textarea { width: 100%; height: 180px; margin-top: 12px; font-family: monospace; font-size: 11px; background: #111; color: #9f9; border: 1px solid #333; border-radius: 6px; padding: 8px; box-sizing: border-box; }
+  h2 { font-size: 15px; font-weight: 500; margin-top: 22px; color: #ccc; border-top: 1px solid #333; padding-top: 14px; }
+  .note { font-size: 11px; color: #777; margin: 4px 0 0; }
+  .warn { font-size: 11px; color: #d9a35c; margin: 12px 0 0; border: 1px solid #4a3a1f; background: #2a2010; padding: 8px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="preview">
+    <svg id="svgOut" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="weaveBase" width="8" height="8" patternUnits="userSpaceOnUse">
+          <rect id="baseRect" width="8" height="8" fill="#d8c9a8"/>
+          <rect id="warpRect" x="0" y="0" width="4" height="8" fill="#c4b28e"/>
+          <rect id="weftRect" x="0" y="0" width="8" height="4" fill="#c4b28e" opacity="0.55"/>
+          <rect id="shadeRectTile" x="4" y="4" width="4" height="4" fill="#a89876" opacity="0.5"/>
+        </pattern>
+
+        <filter id="fabricGrain" x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence id="warpTurb" type="fractalNoise" baseFrequency="0.02" numOctaves="3" seed="8" result="warpField"/>
+          <feImage id="weaveImg" xlink:href="#weaveTile" x="0" y="0" width="400" height="400" result="weaveImgResult"/>
+          <feDisplacementMap id="dispMap" in="weaveImgResult" in2="warpField" scale="6" xChannelSelector="R" yChannelSelector="G" result="wovenWarped"/>
+
+          <feTurbulence id="fiberTurb" type="fractalNoise" baseFrequency="0.6" numOctaves="2" seed="14" result="fiberNoise"/>
+          <feColorMatrix in="fiberNoise" type="matrix"
+            values="0.33 0.33 0.33 0 0
+                    0.33 0.33 0.33 0 0
+                    0.33 0.33 0.33 0 0
+                    0    0    0    0 1" result="fiberGray"/>
+          <feComponentTransfer in="fiberGray" result="fiberSubtle">
+            <feFuncA id="fiberAlpha" type="linear" slope="0.25" intercept="0"/>
+          </feComponentTransfer>
+
+          <feBlend in="wovenWarped" in2="fiberSubtle" mode="multiply" result="blended"/>
+          <feComposite in="blended" in2="SourceAlpha" operator="in"/>
+        </filter>
+      </defs>
+
+      <rect id="weaveTile" width="400" height="400" fill="url(#weaveBase)"/>
+      <rect width="400" height="400" filter="url(#fabricGrain)"/>
+    </svg>
+    <p class="warn">feDisplacementMap + feImage 引用本地元素在 Safari 的支援度不穩定,正式上線前務必實機測試,或考慮改用點陣圖 pattern 當備案。</p>
+  </div>
+
+  <div class="controls">
+    <h2 style="border-top:none;padding-top:0;margin-top:0;">經緯編織</h2>
+    <label class="row">織法單位大小(織點粗細) <span id="vTile">8</span></label>
+    <input type="range" id="tileSize" min="4" max="24" step="1" value="8">
+
+    <label class="row">經線寬度比例 <span id="vWarpRatio">50%</span></label>
+    <input type="range" id="warpRatio" min="10" max="90" step="1" value="50">
+
+    <label class="row">緯線不透明度 <span id="vWeftOpacity">0.55</span></label>
+    <input type="range" id="weftOpacity" min="0" max="1" step="0.01" value="0.55">
+
+    <label class="row">交織陰影強度 <span id="vShadeOpacity">0.50</span></label>
+    <input type="range" id="tileShadeOpacity" min="0" max="1" step="0.01" value="0.5">
+
+    <label class="row">陰影 X 偏移 <span id="vShadeX">50%</span></label>
+    <input type="range" id="shadeOffsetX" min="0" max="100" step="1" value="50">
+
+    <label class="row">陰影 Y 偏移 <span id="vShadeY">50%</span></label>
+    <input type="range" id="shadeOffsetY" min="0" max="100" step="1" value="50">
+
+    <label class="row">陰影大小比例 <span id="vShadeSize">50%</span></label>
+    <input type="range" id="shadeSize" min="10" max="100" step="1" value="50">
+    <p class="note">偏移量是相對整個織點單位的位置(0~100%),配合經緯線寬度比例一起調,可以讓陰影卡在經緯線交叉的實際位置上</p>
+
+    <label class="row">底色</label>
+    <input type="color" id="baseColor" value="#d8c9a8" style="width:100%;height:32px;">
+    <label class="row">織線色</label>
+    <input type="color" id="threadColor" value="#c4b28e" style="width:100%;height:32px;">
+    <label class="row">交織陰影色</label>
+    <input type="color" id="tileShadeColor" value="#a89876" style="width:100%;height:32px;">
+
+    <h2>手工扭曲感</h2>
+    <label class="row">扭曲強度 <span id="vWarpScale">6</span></label>
+    <input type="range" id="warpScale" min="0" max="25" step="0.5" value="6">
+    <p class="note">數值越高,經緯線越彎曲不規則,越接近手工織物;調到 0 會是死板的機械格線</p>
+
+    <label class="row">扭曲雜訊頻率 <span id="vWarpFreq">0.020</span></label>
+    <input type="range" id="warpFreq" min="0.005" max="0.08" step="0.001" value="0.02">
+
+    <label class="row">扭曲層次 numOctaves <span id="vWarpOct">3</span></label>
+    <input type="range" id="warpOct" min="1" max="5" step="1" value="3">
+
+    <h2>纖維毛邊雜訊</h2>
+    <label class="row">纖維細碎度 <span id="vFiberFreq">0.60</span></label>
+    <input type="range" id="fiberFreq" min="0.1" max="1.5" step="0.01" value="0.6">
+
+    <label class="row">纖維強度 <span id="vFiberStrength">0.25</span></label>
+    <input type="range" id="fiberStrength" min="0" max="1" step="0.01" value="0.25">
+
+    <button id="randSeed">換一個隨機紋理</button>
+
+    <h2>目前完整 SVG 程式碼</h2>
+    <textarea id="code" readonly></textarea>
+  </div>
+</div>
+
+<script>
+const tileSizeEl = document.getElementById('tileSize');
+const warpRatioEl = document.getElementById('warpRatio');
+const weftOpacityEl = document.getElementById('weftOpacity');
+const tileShadeOpacityEl = document.getElementById('tileShadeOpacity');
+const shadeOffsetXEl = document.getElementById('shadeOffsetX');
+const shadeOffsetYEl = document.getElementById('shadeOffsetY');
+const shadeSizeEl = document.getElementById('shadeSize');
+const baseColorEl = document.getElementById('baseColor');
+const threadColorEl = document.getElementById('threadColor');
+const tileShadeColorEl = document.getElementById('tileShadeColor');
+const warpScaleEl = document.getElementById('warpScale');
+const warpFreqEl = document.getElementById('warpFreq');
+const warpOctEl = document.getElementById('warpOct');
+const fiberFreqEl = document.getElementById('fiberFreq');
+const fiberStrengthEl = document.getElementById('fiberStrength');
+
+const weaveBase = document.getElementById('weaveBase');
+const baseRect = document.getElementById('baseRect');
+const warpRect = document.getElementById('warpRect');
+const weftRect = document.getElementById('weftRect');
+const shadeRectTile = document.getElementById('shadeRectTile');
+const warpTurb = document.getElementById('warpTurb');
+const dispMap = document.getElementById('dispMap');
+const fiberTurb = document.getElementById('fiberTurb');
+const fiberAlpha = document.getElementById('fiberAlpha');
+const code = document.getElementById('code');
+
+function update() {
+  const tile = parseInt(tileSizeEl.value);
+  const warpRatio = parseFloat(warpRatioEl.value) / 100;
+  const weftOpacity = parseFloat(weftOpacityEl.value);
+  const tileShadeOpacity = parseFloat(tileShadeOpacityEl.value);
+  const shadeOffsetX = parseFloat(shadeOffsetXEl.value) / 100;
+  const shadeOffsetY = parseFloat(shadeOffsetYEl.value) / 100;
+  const shadeSize = parseFloat(shadeSizeEl.value) / 100;
+  const warpScale = parseFloat(warpScaleEl.value);
+  const warpFreq = parseFloat(warpFreqEl.value);
+  const warpOct = parseInt(warpOctEl.value);
+  const fiberFreq = parseFloat(fiberFreqEl.value);
+  const fiberStrength = parseFloat(fiberStrengthEl.value);
+
+  document.getElementById('vTile').textContent = tile;
+  document.getElementById('vWarpRatio').textContent = Math.round(warpRatio * 100) + '%';
+  document.getElementById('vWeftOpacity').textContent = weftOpacity.toFixed(2);
+  document.getElementById('vShadeOpacity').textContent = tileShadeOpacity.toFixed(2);
+  document.getElementById('vShadeX').textContent = Math.round(shadeOffsetX * 100) + '%';
+  document.getElementById('vShadeY').textContent = Math.round(shadeOffsetY * 100) + '%';
+  document.getElementById('vShadeSize').textContent = Math.round(shadeSize * 100) + '%';
+  document.getElementById('vWarpScale').textContent = warpScale;
+  document.getElementById('vWarpFreq').textContent = warpFreq.toFixed(3);
+  document.getElementById('vWarpOct').textContent = warpOct;
+  document.getElementById('vFiberFreq').textContent = fiberFreq.toFixed(2);
+  document.getElementById('vFiberStrength').textContent = fiberStrength.toFixed(2);
+
+  const warpW = (tile * warpRatio).toFixed(2);
+  const weftH = (tile * warpRatio).toFixed(2);
+
+  weaveBase.setAttribute('width', tile);
+  weaveBase.setAttribute('height', tile);
+  baseRect.setAttribute('width', tile);
+  baseRect.setAttribute('height', tile);
+  baseRect.setAttribute('fill', baseColorEl.value);
+
+  warpRect.setAttribute('width', warpW);
+  warpRect.setAttribute('height', tile);
+  warpRect.setAttribute('fill', threadColorEl.value);
+
+  weftRect.setAttribute('width', tile);
+  weftRect.setAttribute('height', weftH);
+  weftRect.setAttribute('fill', threadColorEl.value);
+  weftRect.setAttribute('opacity', weftOpacity);
+
+  const shadeX = (tile * shadeOffsetX).toFixed(2);
+  const shadeY = (tile * shadeOffsetY).toFixed(2);
+  const shadeW = (tile * shadeSize).toFixed(2);
+  const shadeH = (tile * shadeSize).toFixed(2);
+  shadeRectTile.setAttribute('x', shadeX);
+  shadeRectTile.setAttribute('y', shadeY);
+  shadeRectTile.setAttribute('width', shadeW);
+  shadeRectTile.setAttribute('height', shadeH);
+  shadeRectTile.setAttribute('fill', tileShadeColorEl.value);
+  shadeRectTile.setAttribute('opacity', tileShadeOpacity);
+
+  warpTurb.setAttribute('baseFrequency', warpFreq);
+  warpTurb.setAttribute('numOctaves', warpOct);
+  dispMap.setAttribute('scale', warpScale);
+
+  fiberTurb.setAttribute('baseFrequency', fiberFreq);
+  fiberAlpha.setAttribute('slope', fiberStrength);
+
+  code.value = `<!-- 經緯編織的基本單位圖樣 -->
+<pattern id="weaveBase" width="${tile}" height="${tile}" patternUnits="userSpaceOnUse">
+  <rect width="${tile}" height="${tile}" fill="${baseColorEl.value}"/>
+  <rect x="0" y="0" width="${warpW}" height="${tile}" fill="${threadColorEl.value}"/>
+  <rect x="0" y="0" width="${tile}" height="${weftH}" fill="${threadColorEl.value}" opacity="${weftOpacity}"/>
+  <rect x="${shadeX}" y="${shadeY}" width="${shadeW}" height="${shadeH}" fill="${tileShadeColorEl.value}" opacity="${tileShadeOpacity}"/>
+</pattern>
+
+<filter id="fabricGrain" x="-20%" y="-20%" width="140%" height="140%">
+  <feTurbulence type="fractalNoise" baseFrequency="${warpFreq}" numOctaves="${warpOct}" seed="${warpTurb.getAttribute('seed')}" result="warpField"/>
+  <feImage xlink:href="#weaveTile" x="0" y="0" width="400" height="400" result="weaveImgResult"/>
+  <feDisplacementMap in="weaveImgResult" in2="warpField" scale="${warpScale}" xChannelSelector="R" yChannelSelector="G" result="wovenWarped"/>
+
+  <feTurbulence type="fractalNoise" baseFrequency="${fiberFreq}" numOctaves="2" seed="${fiberTurb.getAttribute('seed')}" result="fiberNoise"/>
+  <feColorMatrix in="fiberNoise" type="matrix"
+    values="0.33 0.33 0.33 0 0
+            0.33 0.33 0.33 0 0
+            0.33 0.33 0.33 0 0
+            0    0    0    0 1" result="fiberGray"/>
+  <feComponentTransfer in="fiberGray" result="fiberSubtle">
+    <feFuncA type="linear" slope="${fiberStrength}" intercept="0"/>
+  </feComponentTransfer>
+
+  <feBlend in="wovenWarped" in2="fiberSubtle" mode="multiply" result="blended"/>
+  <feComposite in="blended" in2="SourceAlpha" operator="in"/>
+</filter>
+
+<!-- 套用方式:先鋪一層實際畫出來的 weaveTile 供 feImage 引用,filter 再疊上去 -->
+<rect id="weaveTile" width="400" height="400" fill="url(#weaveBase)"/>
+<rect width="400" height="400" filter="url(#fabricGrain)"/>`;
+}
+
+[tileSizeEl, warpRatioEl, weftOpacityEl, tileShadeOpacityEl, shadeOffsetXEl, shadeOffsetYEl, shadeSizeEl, baseColorEl, threadColorEl, tileShadeColorEl,
+ warpScaleEl, warpFreqEl, warpOctEl, fiberFreqEl, fiberStrengthEl].forEach(el => el.addEventListener('input', update));
+
+document.getElementById('randSeed').addEventListener('click', () => {
+  warpTurb.setAttribute('seed', Math.floor(Math.random() * 1000));
+  fiberTurb.setAttribute('seed', Math.floor(Math.random() * 1000));
+  update();
+});
+
+update();
+</script>
+</body>
+</html>

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>紙紋調整器</title>
+<style>
+  body { font-family: -apple-system, "PingFang TC", sans-serif; background: #1a1a1a; color: #eee; padding: 24px; }
+  .wrap { display: flex; gap: 32px; max-width: 900px; margin: 0 auto; flex-wrap: wrap; }
+  .preview { flex: 0 0 320px; }
+  .preview svg { width: 320px; height: 320px; border-radius: 4px; display: block; }
+  .controls { flex: 1; min-width: 280px; }
+  label { display: block; margin-top: 14px; font-size: 13px; color: #aaa; }
+  .row { display: flex; justify-content: space-between; align-items: center; }
+  .row span { font-family: monospace; color: #d9c9a0; }
+  input[type=range] { width: 100%; margin-top: 6px; }
+  input[type=color] { border: none; background: none; cursor: pointer; }
+  button { margin-top: 20px; background: #333; color: #fff; border: 1px solid #555; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  button:hover { background: #444; }
+  textarea { width: 100%; height: 160px; margin-top: 12px; font-family: monospace; font-size: 11px; background: #111; color: #9f9; border: 1px solid #333; border-radius: 6px; padding: 8px; box-sizing: border-box; }
+  h2 { font-size: 15px; font-weight: 500; margin-top: 22px; color: #ccc; border-top: 1px solid #333; padding-top: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="preview">
+    <svg id="svgOut" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <filter id="paperGrain" x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence id="bigTurb" type="fractalNoise" baseFrequency="0.012 0.03" numOctaves="4" seed="5" result="bigNoise"/>
+          <feColorMatrix in="bigNoise" type="matrix"
+            values="0.33 0.33 0.33 0 0
+                    0.33 0.33 0.33 0 0
+                    0.33 0.33 0.33 0 0
+                    0    0    0    0 1" result="bigGray"/>
+          <feComponentTransfer in="bigGray" result="bigLevels">
+            <feFuncR id="levelR" type="linear" slope="3.33" intercept="-1.17"/>
+            <feFuncG id="levelG" type="linear" slope="3.33" intercept="-1.17"/>
+            <feFuncB id="levelB" type="linear" slope="3.33" intercept="-1.17"/>
+          </feComponentTransfer>
+          <feComponentTransfer in="bigLevels" result="bigContrast">
+            <feFuncR id="gammaR" type="gamma" amplitude="1" exponent="3" offset="0"/>
+            <feFuncG id="gammaG" type="gamma" amplitude="1" exponent="3" offset="0"/>
+            <feFuncB id="gammaB" type="gamma" amplitude="1" exponent="3" offset="0"/>
+          </feComponentTransfer>
+
+          <feTurbulence id="fineTurb" type="fractalNoise" baseFrequency="0.35 0.5" numOctaves="2" seed="21" result="fineNoise"/>
+          <feColorMatrix in="fineNoise" type="matrix"
+            values="0.33 0.33 0.33 0 0
+                    0.33 0.33 0.33 0 0
+                    0.33 0.33 0.33 0 0
+                    0    0    0    0 1" result="fineGray"/>
+
+          <feComposite id="mixComposite" in="fineGray" in2="bigContrast" operator="arithmetic" k1="0" k2="0.75" k3="0.25" k4="0" result="mixed"/>
+
+          <feColorMatrix id="colorize" in="mixed" type="matrix"
+            values="0.12 0 0 0 0.82
+                    0    0.14 0 0 0.79
+                    0    0    0.16 0 0.70
+                    0    0    0    0 1"
+            result="colorized"/>
+          <feComposite in="colorized" in2="SourceAlpha" operator="in"/>
+        </filter>
+      </defs>
+      <rect width="400" height="400" filter="url(#paperGrain)"/>
+    </svg>
+  </div>
+
+  <div class="controls">
+    <h2 style="border-top:none;padding-top:0;margin-top:0;">大範圍斑駁層</h2>
+    <label class="row">X 方向頻率 <span id="vFx">0.012</span></label>
+    <input type="range" id="fx" min="0.003" max="0.08" step="0.001" value="0.012">
+
+    <label class="row">Y 方向頻率 <span id="vFy">0.030</span></label>
+    <input type="range" id="fy" min="0.003" max="0.08" step="0.001" value="0.03">
+    <p style="font-size:11px;color:#777;margin:4px 0 0;">X、Y 不同值 → 斑駁有方向性,像纖維走向;調成一樣 → 均勻雲霧狀</p>
+
+    <label class="row">層次感 numOctaves <span id="vBigOct">4</span></label>
+    <input type="range" id="bigOct" min="1" max="6" step="1" value="4">
+
+    <label class="row">斑駁黑點(裁切下限) <span id="vBlack">0.35</span></label>
+    <input type="range" id="levelBlack" min="0" max="0.9" step="0.01" value="0.35">
+
+    <label class="row">斑駁白點(裁切上限) <span id="vWhite">0.65</span></label>
+    <input type="range" id="levelWhite" min="0.1" max="1" step="0.01" value="0.65">
+    <p style="font-size:11px;color:#777;margin:4px 0 0;">黑白點夾得越緊(數值越靠近),中間留下的過渡帶越窄,斑駁塊面越分明銳利</p>
+
+    <label class="row">斑駁對比強度(gamma 曲線微調) <span id="vGamma">3.0</span></label>
+    <input type="range" id="gamma" min="1" max="8" step="0.1" value="3">
+
+    <h2>細纖維顆粒層</h2>
+    <label class="row">顆粒細碎度 <span id="vFineFreq">0.40</span></label>
+    <input type="range" id="fineFreq" min="0.1" max="1.5" step="0.01" value="0.4">
+
+    <label class="row">層次感 numOctaves <span id="vFineOct">2</span></label>
+    <input type="range" id="fineOct" min="1" max="4" step="1" value="2">
+
+    <h2>混合與上色</h2>
+    <label class="row">斑駁 / 纖維 混合比例 <span id="vMix">25%</span></label>
+    <input type="range" id="mix" min="0" max="100" step="1" value="25">
+    <p style="font-size:11px;color:#777;margin:4px 0 0;">數值越高,大範圍斑駁越明顯;越低則越接近均勻細顆粒</p>
+
+    <label class="row">紙張暗部色</label>
+    <input type="color" id="shadowColor" value="#b3a06e" style="width:100%;height:32px;">
+
+    <label class="row">紙張亮部色</label>
+    <input type="color" id="highlightColor" value="#f7f0dc" style="width:100%;height:32px;">
+
+    <label class="row">整體對比 <span id="vContrast">1.0</span></label>
+    <input type="range" id="contrast" min="0.2" max="2.5" step="0.05" value="1">
+
+    <button id="randSeed">換一個隨機紋理</button>
+
+    <h2>目前完整 SVG 濾鏡程式碼</h2>
+    <textarea id="code" readonly></textarea>
+  </div>
+</div>
+
+<script>
+const fxEl = document.getElementById('fx');
+const fyEl = document.getElementById('fy');
+const bigOctEl = document.getElementById('bigOct');
+const levelBlackEl = document.getElementById('levelBlack');
+const levelWhiteEl = document.getElementById('levelWhite');
+const gammaEl = document.getElementById('gamma');
+const fineFreqEl = document.getElementById('fineFreq');
+const fineOctEl = document.getElementById('fineOct');
+const mixEl = document.getElementById('mix');
+const shadowColorEl = document.getElementById('shadowColor');
+const highlightColorEl = document.getElementById('highlightColor');
+const contrastEl = document.getElementById('contrast');
+
+const bigTurb = document.getElementById('bigTurb');
+const fineTurb = document.getElementById('fineTurb');
+const gammaR = document.getElementById('gammaR');
+const gammaG = document.getElementById('gammaG');
+const gammaB = document.getElementById('gammaB');
+const levelR = document.getElementById('levelR');
+const levelG = document.getElementById('levelG');
+const levelB = document.getElementById('levelB');
+const mixComposite = document.getElementById('mixComposite');
+const colorize = document.getElementById('colorize');
+const code = document.getElementById('code');
+
+function hexToRgb01(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+}
+
+function update() {
+  const fx = parseFloat(fxEl.value);
+  const fy = parseFloat(fyEl.value);
+  const bigOct = parseInt(bigOctEl.value);
+  const levelBlack = parseFloat(levelBlackEl.value);
+  let levelWhite = parseFloat(levelWhiteEl.value);
+  if (levelWhite <= levelBlack) levelWhite = levelBlack + 0.05; // 避免白點小於黑點造成除以零或反相
+  const gamma = parseFloat(gammaEl.value);
+  const fineFreq = parseFloat(fineFreqEl.value);
+  const fineOct = parseInt(fineOctEl.value);
+  const mix = parseFloat(mixEl.value) / 100;
+  const contrast = parseFloat(contrastEl.value);
+
+  document.getElementById('vFx').textContent = fx.toFixed(3);
+  document.getElementById('vFy').textContent = fy.toFixed(3);
+  document.getElementById('vBigOct').textContent = bigOct;
+  document.getElementById('vBlack').textContent = levelBlack.toFixed(2);
+  document.getElementById('vWhite').textContent = levelWhite.toFixed(2);
+  document.getElementById('vGamma').textContent = gamma.toFixed(1);
+  document.getElementById('vFineFreq').textContent = fineFreq.toFixed(2);
+  document.getElementById('vFineOct').textContent = fineOct;
+  document.getElementById('vMix').textContent = Math.round(mix * 100) + '%';
+  document.getElementById('vContrast').textContent = contrast.toFixed(2);
+
+  bigTurb.setAttribute('baseFrequency', `${fx} ${fy}`);
+  bigTurb.setAttribute('numOctaves', bigOct);
+  fineTurb.setAttribute('baseFrequency', fineFreq);
+  fineTurb.setAttribute('numOctaves', fineOct);
+
+  const slope = 1 / (levelWhite - levelBlack);
+  const intercept = -levelBlack * slope;
+  [levelR, levelG, levelB].forEach(f => {
+    f.setAttribute('slope', slope.toFixed(4));
+    f.setAttribute('intercept', intercept.toFixed(4));
+  });
+
+  [gammaR, gammaG, gammaB].forEach(g => g.setAttribute('exponent', gamma));
+
+  mixComposite.setAttribute('k2', (1 - mix).toFixed(3));
+  mixComposite.setAttribute('k3', mix.toFixed(3));
+
+  const shadow = hexToRgb01(shadowColorEl.value);
+  const highlight = hexToRgb01(highlightColorEl.value);
+  const chans = ['R','G','B'];
+  const rows = [];
+  chans.forEach((c, i) => {
+    const mid = (shadow[i] + highlight[i]) / 2;
+    const half = ((highlight[i] - shadow[i]) / 2) * contrast;
+    const a = 2 * half;
+    const e = mid - half;
+    const row = [0,0,0,0,0];
+    row[i] = a.toFixed(3);
+    row[4] = e.toFixed(3);
+    rows.push(row.join(' '));
+  });
+  rows.push('0 0 0 0 1');
+  const matrix = rows.join('\n            ');
+  colorize.setAttribute('values', matrix);
+
+  code.value = `<filter id="paperGrain" x="-10%" y="-10%" width="120%" height="120%">
+  <feTurbulence type="fractalNoise" baseFrequency="${fx} ${fy}" numOctaves="${bigOct}" seed="${bigTurb.getAttribute('seed')}" result="bigNoise"/>
+  <feColorMatrix in="bigNoise" type="matrix"
+    values="0.33 0.33 0.33 0 0
+            0.33 0.33 0.33 0 0
+            0.33 0.33 0.33 0 0
+            0    0    0    0 1" result="bigGray"/>
+  <feComponentTransfer in="bigGray" result="bigLevels">
+    <feFuncR type="linear" slope="${slope.toFixed(4)}" intercept="${intercept.toFixed(4)}"/>
+    <feFuncG type="linear" slope="${slope.toFixed(4)}" intercept="${intercept.toFixed(4)}"/>
+    <feFuncB type="linear" slope="${slope.toFixed(4)}" intercept="${intercept.toFixed(4)}"/>
+  </feComponentTransfer>
+  <feComponentTransfer in="bigLevels" result="bigContrast">
+    <feFuncR type="gamma" amplitude="1" exponent="${gamma}" offset="0"/>
+    <feFuncG type="gamma" amplitude="1" exponent="${gamma}" offset="0"/>
+    <feFuncB type="gamma" amplitude="1" exponent="${gamma}" offset="0"/>
+  </feComponentTransfer>
+
+  <feTurbulence type="fractalNoise" baseFrequency="${fineFreq}" numOctaves="${fineOct}" seed="${fineTurb.getAttribute('seed')}" result="fineNoise"/>
+  <feColorMatrix in="fineNoise" type="matrix"
+    values="0.33 0.33 0.33 0 0
+            0.33 0.33 0.33 0 0
+            0.33 0.33 0.33 0 0
+            0    0    0    0 1" result="fineGray"/>
+
+  <feComposite in="fineGray" in2="bigContrast" operator="arithmetic" k1="0" k2="${(1-mix).toFixed(3)}" k3="${mix.toFixed(3)}" k4="0" result="mixed"/>
+
+  <feColorMatrix in="mixed" type="matrix"
+    values="${matrix}"
+    result="colorized"/>
+  <feComposite in="colorized" in2="SourceAlpha" operator="in"/>
+</filter>`;
+}
+
+[fxEl, fyEl, bigOctEl, levelBlackEl, levelWhiteEl, gammaEl, fineFreqEl, fineOctEl, mixEl, shadowColorEl, highlightColorEl, contrastEl].forEach(el => el.addEventListener('input', update));
+
+document.getElementById('randSeed').addEventListener('click', () => {
+  bigTurb.setAttribute('seed', Math.floor(Math.random() * 1000));
+  fineTurb.setAttribute('seed', Math.floor(Math.random() * 1000));
+  update();
+});
+
+update();
+</script>
+</body>
+</html>
