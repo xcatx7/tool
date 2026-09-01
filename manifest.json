@@ -5,6 +5,16 @@
     "path": "tools/svg-textline/index.html"
   },
   {
+    "name": "svg-紙張紋路",
+    "date": "2026-09-01",
+    "path": "tools/svg-paper/index.html"
+  },
+  {
+    "name": "svg-編織紋路",
+    "date": "2026-09-01",
+    "path": "tools/svg-fabric/index.html"
+  },
+  {
     "name": "svg-水波濾鏡",
     "date": "2026-08-31",
     "path": "tools/svg-wate/index.html"
