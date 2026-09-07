@@ -28,7 +28,7 @@
             border-right: 1px solid #333;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 18px;
             overflow-y: auto;
         }
 
@@ -52,7 +52,7 @@
 
         textarea {
             width: 100%;
-            height: 90px;
+            height: 80px;
             padding: 10px;
             background: #111;
             border: 1px solid #444;
@@ -87,7 +87,7 @@
             border-radius: 4px;
             cursor: pointer;
             transition: background-color 0.2s;
-            margin-top: 10px;
+            margin-top: 6px;
         }
 
         .btn-copy:hover {
@@ -97,6 +97,14 @@
         input[type="range"] {
             width: 100%;
             accent-color: #00d2ff;
+        }
+
+        select {
+            padding: 8px;
+            background: #111;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 4px;
         }
 
         /* 右側預覽區 */
@@ -130,12 +138,24 @@
 
     <!-- 控制面板 -->
     <div class="controls">
-        <h2 style="margin-bottom: 8px;">水波效果控制</h2>
+        <h2 style="margin-bottom: 4px;">水波效果控制</h2>
         
         <div class="control-group">
             <label for="imgUrl">圖片網址 / Base64 數據</label>
             <textarea id="imgUrl" placeholder="可貼上 URL 或 data:image/jpeg;base64,..."></textarea>
             <button type="button" id="btnApplyImg" class="btn-update">更新圖片</button>
+        </div>
+
+        <!-- 水位／切割控制區 -->
+        <div class="control-group" style="background: #1a1a1a; padding: 12px; border-radius: 6px;">
+            <label for="splitPos" style="color: #00d2ff;">切割位置 (水位線) <span class="val-display" id="splitVal">50%</span></label>
+            <input type="range" id="splitPos" min="0" max="100" step="1" value="50">
+
+            <label for="splitDir" style="margin-top: 8px;">切割方向</label>
+            <select id="splitDir">
+                <option value="horizontal">水平切割 (下半部水波)</option>
+                <option value="vertical">垂直切割 (右半部水波)</option>
+            </select>
         </div>
 
         <div class="control-group">
@@ -172,14 +192,25 @@
         <div class="svg-wrapper">
             <svg id="previewSvg" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1920 1080" preserveAspectRatio="none">
                 <defs>
+                    <!-- 水波濾鏡 -->
                     <filter id="water">
                         <feTurbulence id="feTurb" type="turbulence" baseFrequency="0.020 0.040" numOctaves="3" result="turb">
                             <animate id="animFreq" attributeName="baseFrequency" values="0.018 0.036; 0.020 0.040; 0.018 0.036" dur="20s" repeatCount="indefinite" />
                         </feTurbulence>
                         <feDisplacementMap id="feDisp" in="SourceGraphic" in2="turb" scale="12" xChannelSelector="R" yChannelSelector="G" />
                     </filter>
+
+                    <!-- 水波區域遮罩範圍 -->
+                    <clipPath id="waterClip">
+                        <rect id="clipRect" x="0" y="540" width="1920" height="540" />
+                    </clipPath>
                 </defs>
-                <image id="targetImg" width="1980" height="1120" x="-30" y="-20" preserveAspectRatio="none" filter="url(#water)" />
+
+                <!-- 底圖：完整無水波原始圖片 -->
+                <image class="targetImg" width="1980" height="1120" x="-30" y="-20" preserveAspectRatio="none" />
+
+                <!-- 頂層：只在遮罩範圍內套用水波濾鏡的圖片 -->
+                <image class="targetImg" width="1980" height="1120" x="-30" y="-20" preserveAspectRatio="none" filter="url(#water)" clip-path="url(#waterClip)" />
             </svg>
         </div>
     </div>
@@ -192,12 +223,16 @@
         const imgUrlInput = document.getElementById('imgUrl');
         const btnApplyImg = document.getElementById('btnApplyImg');
         const btnCopyCode = document.getElementById('btnCopyCode');
+
+        const splitPosInput = document.getElementById('splitPos');
+        const splitDirSelect = document.getElementById('splitDir');
         const baseFreqXInput = document.getElementById('baseFreqX');
         const baseFreqYInput = document.getElementById('baseFreqY');
         const octavesInput = document.getElementById('octaves');
         const scaleInput = document.getElementById('scale');
         const durationInput = document.getElementById('duration');
 
+        const splitVal = document.getElementById('splitVal');
         const freqXVal = document.getElementById('freqXVal');
         const freqYVal = document.getElementById('freqYVal');
         const octVal = document.getElementById('octVal');
@@ -205,17 +240,20 @@
         const durVal = document.getElementById('durVal');
 
         const previewSvg = document.getElementById('previewSvg');
+        const clipRect = document.getElementById('clipRect');
         const feTurb = document.getElementById('feTurb');
         const animFreq = document.getElementById('animFreq');
         const feDisp = document.getElementById('feDisp');
-        const targetImg = document.getElementById('targetImg');
+        const targetImgs = document.querySelectorAll('.targetImg');
 
-        // 更新圖片源
+        // 更新圖片源（同步更新靜態底圖與水波層）
         function applyImage() {
             const val = imgUrlInput.value.trim();
             const src = val || defaultBase64;
-            targetImg.setAttribute('href', src);
-            targetImg.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', src);
+            targetImgs.forEach(img => {
+                img.setAttribute('href', src);
+                img.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', src);
+            });
         }
 
         // 點擊「更新圖片」按鈕觸發
@@ -228,6 +266,31 @@
                 applyImage();
             }
         });
+
+        // 更新切割區域
+        function updateSplit() {
+            const posPct = parseFloat(splitPosInput.value);
+            const dir = splitDirSelect.value;
+            splitVal.textContent = `${posPct}%`;
+
+            if (dir === 'horizontal') {
+                // 水平切割：y 為切割點，涵蓋下半部
+                const yPos = (1080 * (posPct / 100)).toFixed(1);
+                const height = (1080 - yPos).toFixed(1);
+                clipRect.setAttribute('x', '0');
+                clipRect.setAttribute('y', yPos);
+                clipRect.setAttribute('width', '1920');
+                clipRect.setAttribute('height', height);
+            } else {
+                // 垂直切割：x 為切割點，涵蓋右半部
+                const xPos = (1920 * (posPct / 100)).toFixed(1);
+                const width = (1920 - xPos).toFixed(1);
+                clipRect.setAttribute('x', xPos);
+                clipRect.setAttribute('y', '0');
+                clipRect.setAttribute('width', width);
+                clipRect.setAttribute('height', '1080');
+            }
+        }
 
         // 更新濾鏡與動畫參數
         function updateSVG() {
@@ -262,13 +325,9 @@
 
         // 複製 SVG 程式碼功能
         btnCopyCode.addEventListener('click', () => {
-            // 複製前先移除內部產生的暫存/內部 ID 雜訊（可選，這裡保留乾淨 HTML）
             const cloneSvg = previewSvg.cloneNode(true);
-            
-            // 將整段 SVG 轉為字串格式
             const svgString = new XMLSerializer().serializeToString(cloneSvg);
 
-            // 寫入剪貼簿
             navigator.clipboard.writeText(svgString).then(() => {
                 const originalText = btnCopyCode.textContent;
                 btnCopyCode.textContent = "✓ 已成功複製！";
@@ -284,6 +343,8 @@
         });
 
         // 綁定控制項監聽器
+        splitPosInput.addEventListener('input', updateSplit);
+        splitDirSelect.addEventListener('change', updateSplit);
         baseFreqXInput.addEventListener('input', updateSVG);
         baseFreqYInput.addEventListener('input', updateSVG);
         octavesInput.addEventListener('input', updateSVG);
@@ -293,6 +354,7 @@
         // 初始化：寫入預設圖與初始數值
         imgUrlInput.value = defaultBase64;
         applyImage();
+        updateSplit();
         updateSVG();
     </script>
 </body>
