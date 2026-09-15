@@ -1,0 +1,1420 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>聯絡按鈕區 樣式調整工具</title>
+<style>
+  :root{
+    --radius: 0.9em;
+    --gap: 15px;
+    --btn-background: #5c5c5c;
+    --btn-bg-hover: #3f2727;
+    --btn-text: #ffffff;
+    --btn-text-hover: #ffffff;
+    --btn-border-color: #003320;
+    --btn-border-width: 0px;
+    --icon-filter: brightness(0) invert(1);
+    --icon-filter-hover: brightness(0) invert(1);
+    --addr-bg: #FFFFFF;
+    --addr-text: #000000;
+    --cols: 3;
+    --container-width: 1200px;
+    --modal-icon-filter: brightness(0) invert(43%) sepia(0%) saturate(1053%) hue-rotate(143deg) brightness(92%) contrast(83%);
+    --modal-btn-bg: #808080;
+    --modal-btn-bg-hover: #3b3b3b;
+    --mobar-bg: #524f5f;
+  }
+
+  * { box-sizing: border-box; }
+
+  body{
+    margin: 0;
+    font-family: "Noto Sans TC", "PingFang TC", -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #16181d;
+    color: #e8e8ea;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .app{
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    width: 100%;
+  }
+
+  /* ---------- controls ---------- */
+  .panel{
+    background: #1c1f26;
+    border-right: 1px solid #2a2e37;
+    padding: 24px 20px 40px;
+    overflow-y: auto;
+  }
+  .panel h1{
+    font-size: 16px;
+    margin: 0 0 18px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .group{
+    margin-bottom: 22px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #262a33;
+  }
+  .group:last-of-type{ border-bottom: none; }
+  .group h2{
+    font-size: 11px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #6f7480;
+    margin: 0 0 12px;
+    font-weight: 600;
+  }
+  .field{ margin-bottom: 12px; }
+  .field label{
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #c7cad1;
+    margin-bottom: 6px;
+  }
+  .field label span.val{ color: #fff; font-variant-numeric: tabular-nums; }
+  .checkbox-row{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #c7cad1;
+    margin-bottom: 12px;
+    cursor: pointer;
+  }
+  .checkbox-row input{ accent-color: #B28247; width: 16px; height: 16px; }
+  input[type="range"]{ width: 100%; accent-color: #B28247; }
+  
+  /* Color swatch & Hex input box */
+  .swatch-row{ display: flex; align-items: center; gap: 8px; }
+  input[type="color"]{
+    width: 36px; height: 36px; padding: 0;
+    border: 1px solid #343944; border-radius: 8px;
+    background: none; cursor: pointer;
+    flex-shrink: 0;
+  }
+  .hex-input{
+    flex: 1;
+    background: #262a33;
+    border: 1px solid #333843;
+    border-radius: 6px;
+    color: #e8e8ea;
+    padding: 6px 10px;
+    font-size: 12.5px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    text-transform: uppercase;
+    outline: none;
+  }
+  .hex-input:focus{
+    border-color: #B28247;
+  }
+
+  /* Collapsible Details styling */
+  details.accordion {
+    border: 1px solid #2a2e37;
+    border-radius: 8px;
+    background: #191c22;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  details.accordion summary {
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #c7cad1;
+    cursor: pointer;
+    user-select: none;
+    font-weight: 600;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  details.accordion summary::-webkit-details-marker { display: none; }
+  details.accordion summary::after {
+    content: '▼';
+    font-size: 10px;
+    color: #6f7480;
+    transition: transform 0.2s;
+  }
+  details.accordion[open] summary::after {
+    transform: rotate(180deg);
+  }
+  .accordion-content {
+    padding: 12px;
+    border-top: 1px solid #2a2e37;
+    background: #17191f;
+  }
+
+  select{
+    width: 100%; padding: 8px 10px; background: #262a33; color: #e8e8ea;
+    border: 1px solid #333843; border-radius: 8px; font-size: 13px;
+  }
+  .reset-btn{
+    width: 100%; padding: 9px 0; background: transparent; border: 1px solid #3a3f4a;
+    color: #9ba0aa; border-radius: 8px; font-size: 12.5px; cursor: pointer; margin-top: 4px;
+  }
+  .reset-btn:hover{ border-color: #565c69; color: #d3d6dc; }
+
+  /* ---------- stage ---------- */
+  .stage{ padding: 32px 40px 40px; overflow-y: auto; }
+  .tabs{ display: flex; gap: 6px; margin-bottom: 18px; }
+  .tabs button{
+    padding: 8px 18px; font-size: 13px; border-radius: 8px;
+    border: 1px solid #333843; background: #1c1f26; color: #9ba0aa; cursor: pointer;
+  }
+  .tabs button.active{ background: #B28247; color: #fff; border-color: #B28247; }
+  .tab-panel{ display: none; }
+  .tab-panel.active{ display: block; }
+
+  .preview-frame{
+    position: relative;
+    background: #EFEAD7;
+    border-radius: 16px;
+    padding: 48px 24px;
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .preview-frame.mobile-frame{ padding: 40px 0; background: #4a4d54; }
+
+  /* ---- desktop contact block ---- */
+  .contact-info{
+    width: min(var(--container-width), 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--gap);
+  }
+  .contact-row{
+    display: grid;
+    width: 100%;
+    gap: var(--gap);
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .contact-row.bottom{
+    gap: 0;
+    grid-template-columns: 1fr calc((100% - var(--gap) * 2) / 3);
+  }
+  .contact-item{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .75em;
+    padding: 1.1em 1em;
+    background: var(--btn-background);
+    color: var(--btn-text);
+    border: var(--btn-border-width) solid var(--btn-border-color);
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .25s, color .25s, border-color .25s;
+    white-space: nowrap;
+  }
+  .contact-item img{
+    width: 1.65em; height: 1.65em; object-fit: contain; flex-shrink: 0;
+    filter: var(--icon-filter); margin: 0; transition: filter .25s;
+  }
+  .contact-item:hover{
+    background: var(--btn-bg-hover);
+    color: var(--btn-text-hover);
+    border-color: var(--btn-bg-hover);
+  }
+  .contact-item:hover img{ filter: var(--icon-filter-hover); }
+  .contact-item.address{
+    background: var(--addr-bg);
+    color: var(--addr-text);
+    border: none;
+    cursor: default;
+    white-space: normal;
+    text-align: center;
+    border-radius: var(--radius) 0 0 var(--radius);
+  }
+  .contact-item.address:hover{
+    background: var(--addr-bg);
+    color: var(--addr-text);
+    border: none;
+  }
+  .contact-item.googlemap{ border-radius: 0 var(--radius) var(--radius) 0; }
+
+  .lineicon{
+    position: absolute; right: 20px; bottom: 20px;
+    width: 56px; height: 56px; background: #06c755;
+    border-radius: 20%; aspect-ratio: 1/1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .lineicon img{ width: 65%; filter: brightness(0) invert(1); }
+
+  /* ---- mobile: phone frame ---- */
+  .phone-frame{
+    position: relative;
+    width: 375px; max-width: 100%; height: auto;
+    background: #EFEAD7; border-radius: 20px; overflow: hidden;
+    display: flex; flex-direction: column; margin: 0 auto;
+  }
+  .phone-frame .contact-info-mobile{
+    padding: 32px 32.5px;
+    display: flex; flex-direction: column; gap: var(--gap);
+  }
+  .phone-frame .contact-row{ grid-template-columns: 1fr; }
+  .phone-frame .contact-row.bottom{ grid-template-columns: 1fr; gap: 0; }
+  .phone-frame .contact-item{
+    position: relative;
+    justify-content: center;
+    gap: 0;
+  }
+  .phone-frame .contact-item img{
+    position: absolute;
+    left: 3em;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .phone-frame .contact-item.address{
+    border: var(--btn-border-width) solid var(--btn-border-color);
+    border-bottom: none;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .phone-frame .contact-item.googlemap{ border-radius: 0 0 var(--radius) var(--radius); }
+
+  .mo-bar{
+    width: 100%;
+    height: 63px;
+    background: var(--mobar-bg);
+    display: flex;
+    box-shadow: 0 0 30px rgba(0,0,0,.35);
+    flex-shrink: 0;
+    margin-top: auto;
+  }
+  .mo-bar .contact-item{
+    position: static;
+    flex: 1; padding: 0; color: #fff; background: transparent;
+    border: none; border-radius: 0;
+    border-left: 1px solid rgba(255,255,255,.55);
+    flex-direction: column; gap: .2em;
+    font-size: 12px; font-weight: 500;
+    justify-content: center;
+  }
+  .mo-bar .contact-item:first-child{ border-left: 0; }
+  .mo-bar .contact-item img{
+    position: static; transform: none;
+    width: 1.05em; height: 1.05em; margin: 0;
+    filter: brightness(0) invert(1);
+  }
+  .mo-bar .contact-item:hover{ background: rgba(255,255,255,.15); color:#fff; border-color: transparent; }
+
+  /* Mobile Bar Controls Box */
+  .tab-controls-bar{
+    background: #1c1f26;
+    border: 1px solid #2a2e37;
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+  .tab-controls-bar h3{
+    font-size: 13px; font-weight: 700; color: #fff; margin: 0 0 12px;
+  }
+
+  /* ---------- modal popup preview ---------- */
+  .modal-controls{
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #262a33;
+  }
+  .modal-controls .field{ margin-bottom: 0; min-width: 160px; }
+  .modal-preview-wrap{
+    display: flex; justify-content: center;
+    background: #00000030; padding: 60px 20px; border-radius: 16px;
+  }
+  .modal-box-demo{
+    background: #fff; border-radius: 24px; padding: 36px 32px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    width: min(300px, 100%); box-shadow: 0 10px 40px rgba(0,0,0,.3);
+  }
+  .modal-icon{ width: 44px; height: 44px; filter: var(--modal-icon-filter); }
+  .modal-title{ font-size: 17px; font-weight: 700; color: #1a1a1a; margin-top: 4px; }
+  .modal-content{ font-size: 13.5px; color: #555; }
+  .modal-cta{
+    margin-top: 14px; padding: 11px 30px; border: none; border-radius: 999px;
+    background: var(--modal-btn-bg); color: #fff; font-weight: 700; font-size: 13.5px; cursor: pointer;
+  }
+  .modal-cta:hover{ background: var(--modal-btn-bg-hover); }
+
+  /* ---------- output & actions ---------- */
+  .output-block{ margin-top: 28px; }
+  .output-head{ display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 10px;}
+  .output-head h2{ font-size: 14px; color: #cfd2d8; margin: 0; font-weight: 600; }
+  .action-btns{ display: flex; gap: 10px; }
+  .copy-btn, .dl-btn{
+    padding: 9px 18px; color: #fff; border: none;
+    border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .copy-btn{ background: #B28247; }
+  .copy-btn:hover{ background: #96703c; }
+  .copy-btn.copied{ background: #3a8a55; }
+  .dl-btn{ background: #2f6feb; }
+  .dl-btn:hover{ background: #1f58ca; }
+
+  pre#output{
+    background: #12141a; border: 1px solid #262a33; border-radius: 10px;
+    padding: 18px; font-size: 12.5px; line-height: 1.6; color: #d7dae0;
+    overflow-x: auto; max-height: 520px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ LEFT: CONTROLS ============ -->
+  <div class="panel">
+    <h1>聯絡按鈕區 樣式調整</h1>
+
+    <div class="group">
+      <h2>版面 Layout</h2>
+      <div class="field">
+        <label>電腦版容器寬度 <span class="val" id="v-width">1200px</span></label>
+        <input type="range" id="width" min="600" max="1400" step="20" value="1200" />
+      </div>
+      <div class="field">
+        <label>圓角 border-radius <span class="val" id="v-radius">0.9em</span></label>
+        <input type="range" id="radius" min="0" max="3" step="0.1" value="0.9" />
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>按鈕樣式</h2>
+      <div class="field">
+        <label>底色</label>
+        <div class="swatch-row">
+          <input type="color" id="btnBg" value="#5c5c5c" />
+          <input type="text" class="hex-input" id="hex-btnBg" value="#5C5C5C" maxlength="7" />
+        </div>
+      </div>
+
+      <!-- Collapsible Gradient Background Block -->
+      <details class="accordion" id="gradientAccordion">
+        <summary>漸層背景設定</summary>
+        <div class="accordion-content">
+          <label class="checkbox-row">
+            <input type="checkbox" id="gradientEnabled" />
+            啟用漸層背景
+          </label>
+          <div class="field">
+            <label>漸層終止色</label>
+            <div class="swatch-row">
+              <input type="color" id="gradientColor2" value="#7a5c33" />
+              <input type="text" class="hex-input" id="hex-gradientColor2" value="#7A5C33" maxlength="7" />
+            </div>
+          </div>
+          <div class="field">
+            <label>漸層角度 <span class="val" id="v-angle">135deg</span></label>
+            <input type="range" id="gradientAngle" min="0" max="360" value="135" />
+          </div>
+        </div>
+      </details>
+
+      <div class="field">
+        <label>Hover 底色</label>
+        <div class="swatch-row">
+          <input type="color" id="btnBgHover" value="#3f2727" />
+          <input type="text" class="hex-input" id="hex-btnBgHover" value="#3F2727" maxlength="7" />
+        </div>
+      </div>
+      <div class="field">
+        <label>文字 / 圖示顏色</label>
+        <div class="swatch-row">
+          <input type="color" id="btnText" value="#ffffff" />
+          <input type="text" class="hex-input" id="hex-btnText" value="#FFFFFF" maxlength="7" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>邊框粗細 <span class="val" id="v-borderWidth">0px</span></label>
+        <input type="range" id="borderWidth" min="0" max="6" step="1" value="0" />
+      </div>
+
+      <div class="field">
+        <label>邊框顏色</label>
+        <div class="swatch-row">
+          <input type="color" id="btnBorder" value="#003320" />
+          <input type="text" class="hex-input" id="hex-btnBorder" value="#003320" maxlength="7" />
+        </div>
+      </div>
+      <label class="checkbox-row">
+        <input type="checkbox" id="iconWhiteOnHover" />
+        Hover 時圖示變白
+      </label>
+    </div>
+
+    <div class="group">
+      <h2>地址區</h2>
+      <div class="field">
+        <label>底色</label>
+        <div class="swatch-row">
+          <input type="color" id="addrBg" value="#ffffff" />
+          <input type="text" class="hex-input" id="hex-addrBg" value="#FFFFFF" maxlength="7" />
+        </div>
+      </div>
+      <div class="field">
+        <label>文字顏色</label>
+        <div class="swatch-row">
+          <input type="color" id="addrText" value="#000000" />
+          <input type="text" class="hex-input" id="hex-addrText" value="#000000" maxlength="7" />
+        </div>
+      </div>
+    </div>
+
+    <button class="reset-btn" id="reset">還原預設值</button>
+  </div>
+
+  <!-- ============ RIGHT: TABS + PREVIEW + OUTPUT ============ -->
+  <div class="stage">
+    <div class="tabs">
+      <button data-tab="desktop" class="active">桌機版</button>
+      <button data-tab="mobile">手機版</button>
+      <button data-tab="modal">彈出視窗</button>
+    </div>
+
+    <!-- 桌機版 -->
+    <div class="tab-panel active" id="tab-desktop">
+      <div class="preview-frame" id="desktop-frame">
+        <div class="contact-info">
+          <div class="contact-row" id="desktop-row"></div>
+          <div class="contact-row bottom">
+            <div class="contact-item address"><div>地址：地址待提供</div></div>
+            <div class="contact-item googlemap">
+              <img src="https://h35.banner.tw/img/form/gmap.svg" alt="導航 GoogleMap" />
+              <div>導航 GoogleMap</div>
+            </div>
+          </div>
+        </div>
+        <div class="lineicon">
+          <img src="https://h35.banner.tw/img/form/line.svg" alt="LINE" />
+        </div>
+      </div>
+    </div>
+
+    <!-- 手機版 -->
+    <div class="tab-panel" id="tab-mobile">
+      <div class="tab-controls-bar">
+        <h3>手機底部固定列 設定</h3>
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+          <div class="field" style="margin-bottom:0; flex:1; min-width: 180px;">
+            <label>底色 (單色)</label>
+            <div class="swatch-row">
+              <input type="color" id="mobarC1" value="#524f5f" />
+              <input type="text" class="hex-input" id="hex-mobarC1" value="#524F5F" maxlength="7" />
+            </div>
+          </div>
+          <div style="flex: 1; min-width: 220px;">
+            <details class="accordion" id="mobarGradientAccordion" style="margin-bottom: 0;">
+              <summary>漸層背景設定</summary>
+              <div class="accordion-content">
+                <label class="checkbox-row">
+                  <input type="checkbox" id="mobarGradEnabled" />
+                  啟用漸層背景
+                </label>
+                <div class="field">
+                  <label>漸層終止色</label>
+                  <div class="swatch-row">
+                    <input type="color" id="mobarC2" value="#494ca7" />
+                    <input type="text" class="hex-input" id="hex-mobarC2" value="#494CA7" maxlength="7" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label>漸層角度 <span class="val" id="v-mobarAngle">0deg</span></label>
+                  <input type="range" id="mobarAngle" min="0" max="360" value="0" />
+                </div>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+
+      <div class="preview-frame mobile-frame">
+        <div class="phone-frame">
+          <div class="contact-info-mobile">
+            <div class="contact-row" id="mobile-row"></div>
+            <div class="contact-row bottom">
+              <div class="contact-item address"><div>地址：地址待提供</div></div>
+              <div class="contact-item googlemap">
+                <img src="https://h35.banner.tw/img/form/gmap.svg" alt="導航 GoogleMap" />
+                <div>導航 GoogleMap</div>
+              </div>
+            </div>
+          </div>
+          <div class="mo-bar">
+            <div class="contact-item">
+              <img src="https://h35.banner.tw/img/form/phone.svg" alt="撥打電話" />
+              <div>撥打電話</div>
+            </div>
+            <div class="contact-item">
+              <img src="https://h35.banner.tw/img/form/messenger.svg" alt="FB 諮詢" />
+              <div>FB 諮詢</div>
+            </div>
+            <div class="contact-item">
+              <img src="https://h35.banner.tw/img/form/pen.svg" alt="預約賞屋" />
+              <div>預約賞屋</div>
+            </div>
+            <div class="contact-item">
+              <img src="https://h35.banner.tw/img/form/gmap.svg" alt="地圖導航" />
+              <div>地圖導航</div>
+            </div>
+            <div class="contact-item">
+              <img src="https://h35.banner.tw/img/form/line.svg" alt="官方LINE" />
+              <div>官方LINE</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 彈出視窗 -->
+    <div class="tab-panel" id="tab-modal">
+      <div class="modal-controls">
+        <div class="field">
+          <label>圖示顏色</label>
+          <div class="swatch-row">
+            <input type="color" id="modalIconColor" value="#6e6e6e" />
+            <input type="text" class="hex-input" id="hex-modalIconColor" value="#6E6E6E" maxlength="7" />
+          </div>
+        </div>
+        <div class="field">
+          <label>按鈕底色</label>
+          <div class="swatch-row">
+            <input type="color" id="modalBtnBg" value="#808080" />
+            <input type="text" class="hex-input" id="hex-modalBtnBg" value="#808080" maxlength="7" />
+          </div>
+        </div>
+        <div class="field">
+          <label>按鈕 Hover 底色</label>
+          <div class="swatch-row">
+            <input type="color" id="modalBtnBgHover" value="#3b3b3b" />
+            <input type="text" class="hex-input" id="hex-modalBtnBgHover" value="#3B3B3B" maxlength="7" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-preview-wrap">
+        <div class="modal-box-demo">
+          <img class="modal-icon" src="https://h35.banner.tw/img/form/phone.svg" alt="phone" />
+          <div class="modal-title">賞屋專線</div>
+          <div class="modal-content">02-12345678</div>
+          <button class="modal-cta">撥打電話</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="output-block">
+      <div class="output-head">
+        <h2>對應 SCSS（可整段取代原檔案）</h2>
+        <div class="action-btns">
+          <button class="dl-btn" id="dlSvgBtn">下載完整 SVG (包含電腦+手機版)</button>
+          <button class="copy-btn" id="copyBtn">複製 CSS</button>
+        </div>
+      </div>
+      <pre id="output"></pre>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+
+  /* ============ hex → CSS filter solver ============ */
+  class Color{
+    constructor(r,g,b){ this.set(r,g,b); }
+    set(r,g,b){ this.r=this.clamp(r); this.g=this.clamp(g); this.b=this.clamp(b); }
+    hueRotate(angle=0){
+      angle = angle/180*Math.PI;
+      const s=Math.sin(angle), c=Math.cos(angle);
+      this.multiply([
+        0.213+c*0.787-s*0.213, 0.715-c*0.715-s*0.715, 0.072-c*0.072+s*0.928,
+        0.213-c*0.213+s*0.143, 0.715+c*0.285+s*0.140, 0.072-c*0.072-s*0.283,
+        0.213-c*0.213-s*0.787, 0.715-c*0.715+s*0.715, 0.072+c*0.928+s*0.072
+      ]);
+    }
+    sepia(v=1){
+      this.multiply([
+        0.393+0.607*(1-v), 0.769-0.769*(1-v), 0.189-0.189*(1-v),
+        0.349-0.349*(1-v), 0.686+0.314*(1-v), 0.168-0.168*(1-v),
+        0.272-0.272*(1-v), 0.534-0.534*(1-v), 0.131+0.869*(1-v)
+      ]);
+    }
+    saturate(v=1){
+      this.multiply([
+        0.213+0.787*v, 0.715-0.715*v, 0.072-0.072*v,
+        0.213-0.213*v, 0.715+0.285*v, 0.072-0.072*v,
+        0.213-0.213*v, 0.715-0.715*v, 0.072+0.928*v
+      ]);
+    }
+    multiply(m){
+      const r=this.clamp(this.r*m[0]+this.g*m[1]+this.b*m[2]);
+      const g=this.clamp(this.r*m[3]+this.g*m[4]+this.b*m[5]);
+      const b=this.clamp(this.r*m[6]+this.g*m[7]+this.b*m[8]);
+      this.r=r; this.g=g; this.b=b;
+    }
+    brightness(v=1){ this.linear(v); }
+    contrast(v=1){ this.linear(v, -(0.5*v)+0.5); }
+    linear(slope=1, intercept=0){
+      this.r=this.clamp(this.r*slope+intercept*255);
+      this.g=this.clamp(this.g*slope+intercept*255);
+      this.b=this.clamp(this.b*slope+intercept*255);
+    }
+    invert(v=1){
+      this.r=this.clamp((v+this.r/255*(1-2*v))*255);
+      this.g=this.clamp((v+this.g/255*(1-2*v))*255);
+      this.b=this.clamp((v+this.b/255*(1-2*v))*255);
+    }
+    hsl(){
+      const r=this.r/255, g=this.g/255, b=this.b/255;
+      const max=Math.max(r,g,b), min=Math.min(r,g,b);
+      let h,s; const l=(max+min)/2;
+      if(max===min){ h=s=0; }
+      else{
+        const d=max-min;
+        s = l>0.5 ? d/(2-max-min) : d/(max+min);
+        switch(max){
+          case r: h=(g-b)/d+(g<b?6:0); break;
+          case g: h=(b-r)/d+2; break;
+          default: h=(r-g)/d+4;
+        }
+        h/=6;
+      }
+      return {h:h*100, s:s*100, l:l*100};
+    }
+    clamp(v){ return v>255?255:(v<0?0:v); }
+  }
+
+  class Solver{
+    constructor(target){ this.target=target; this.targetHSL=target.hsl(); }
+    solve(){
+      const r=this.solveNarrow(this.solveWide());
+      return { values:r.values, loss:r.loss, filter:this.css(r.values) };
+    }
+    solveWide(){
+      const A=5, c=15;
+      let best={loss:Infinity};
+      for(let i=0;i<3 && best.loss>25;i++){
+        const initial=[50,20,3750,50,100,100];
+        const improved=this.spsa(A,[60,180,18000,600,1.2,1.2],c,initial,450);
+        if(improved.loss<best.loss) best=improved;
+      }
+      return best;
+    }
+    solveNarrow(wide){
+      const A=wide.loss, c=2, A1=A+1;
+      return this.spsa(A,[0.25*A1,0.25*A1,A1,0.25*A1,0.2*A1,0.2*A1],c,wide.values,250);
+    }
+    spsa(A,a,c,values,iters){
+      const alpha=1, gamma=1/6;
+      let best=values.slice(), bestLoss=Infinity;
+      const deltas=new Array(6), hi=new Array(6), lo=new Array(6);
+      for(let k=0;k<iters;k++){
+        const ck=c/Math.pow(k+1,gamma);
+        for(let i=0;i<6;i++){
+          deltas[i]=Math.random()>0.5?1:-1;
+          hi[i]=values[i]+ck*deltas[i];
+          lo[i]=values[i]-ck*deltas[i];
+        }
+        const diff=this.loss(hi)-this.loss(lo);
+        for(let i=0;i<6;i++){
+          const g=diff/(2*ck)*deltas[i];
+          const ak=a[i]/Math.pow(A+k+1,alpha);
+          values[i]=fix(values[i]-ak*g, i);
+        }
+        const loss=this.loss(values);
+        if(loss<bestLoss){ best=values.slice(); bestLoss=loss; }
+      }
+      return {values:best, loss:bestLoss};
+      function fix(v, idx){
+        let max=100;
+        if(idx===2) max=7500; else if(idx===4||idx===5) max=200;
+        if(idx===3){
+          if(v>max) v%=max; else if(v<0) v=max+v%max;
+        } else if(v<0) v=0; else if(v>max) v=max;
+        return v;
+      }
+    }
+    loss(f){
+      const c=new Color(0,0,0);
+      c.invert(f[0]/100); c.sepia(f[1]/100); c.saturate(f[2]/100);
+      c.hueRotate(f[3]*3.6); c.brightness(f[4]/100); c.contrast(f[5]/100);
+      const hsl=c.hsl();
+      return Math.abs(c.r-this.target.r)+Math.abs(c.g-this.target.g)+Math.abs(c.b-this.target.b)
+        +Math.abs(hsl.h-this.targetHSL.h)+Math.abs(hsl.s-this.targetHSL.s)+Math.abs(hsl.l-this.targetHSL.l);
+    }
+    css(f){
+      const r=(i,m=1)=>Math.round(f[i]*m);
+      return `invert(${r(0)}%) sepia(${r(1)}%) saturate(${r(2)}%) hue-rotate(${r(3,3.6)}deg) brightness(${r(4)}%) contrast(${r(5)}%)`;
+    }
+  }
+
+  function hexToRgb(hex){
+    hex = hex.replace('#','');
+    if(hex.length===3) hex = hex.split('').map(c=>c+c).join('');
+    const num = parseInt(hex,16);
+    return [(num>>16)&255,(num>>8)&255,num&255];
+  }
+
+  function computeIconFilter(hex){
+    const h = hex.toLowerCase();
+    if(h==='#ffffff'||h==='#fff') return 'brightness(0) invert(1)';
+    if(h==='#000000'||h==='#000') return 'brightness(0)';
+    const [r,g,b] = hexToRgb(h);
+    const solver = new Solver(new Color(r,g,b));
+    const result = solver.solve();
+    return `brightness(0) ${result.filter}`;
+  }
+
+  /* Fixed 3 Buttons configuration */
+  const BUTTON_DEFS = {
+    phone:     { icon: 'phone.svg',     alt: '電話',           label: '02-12345678' },
+    messenger: { icon: 'messenger.svg', alt: 'Facebook 諮詢',  label: 'Facebook 諮詢' },
+    fb:        { icon: 'fb.svg',        alt: '前往粉絲專頁',   label: '前往粉絲專頁' }
+  };
+  const BUTTON_ORDER = ['phone','messenger','fb'];
+
+  function buttonHtml(key){
+    const d = BUTTON_DEFS[key];
+    return `<div class="contact-item"><img src="https://h35.banner.tw/img/form/${d.icon}" alt="${d.alt}" /><div>${d.label}</div></div>`;
+  }
+
+  function renderButtonRows(){
+    const html = BUTTON_ORDER.map(buttonHtml).join('');
+    document.getElementById('desktop-row').innerHTML = html;
+    document.getElementById('mobile-row').innerHTML = html;
+  }
+
+  /* State */
+  const root = document.documentElement;
+  const state = {
+    cols: 3,
+    radius: 0.9,
+    gap: 15,
+    width: 1200,
+    btnBg: '#5c5c5c',
+    gradientEnabled: false,
+    gradientColor2: '#7a5c33',
+    gradientAngle: 135,
+    btnBgHover: '#3f2727',
+    btnText: '#ffffff',
+    btnBorder: '#003320',
+    borderWidth: 0,
+    iconFilterCss: 'brightness(0) invert(1)',
+    iconWhiteOnHover: false,
+    fontSize: 16,
+    addrBg: '#ffffff',
+    addrText: '#000000',
+    mobarC1: '#524f5f',
+    mobarGradEnabled: false,
+    mobarC2: '#494ca7',
+    mobarAngle: 0,
+    modalIconColor: '#6e6e6e',
+    modalIconFilterCss: 'brightness(0) invert(43%) sepia(0%) saturate(1053%) hue-rotate(143deg) brightness(92%) contrast(83%)',
+    modalBtnBg: '#808080',
+    modalBtnBgHover: '#3b3b3b'
+  };
+
+  const colorFields = ['btnBg','gradientColor2','btnBgHover','btnText','btnBorder','addrBg','addrText','mobarC1','mobarC2','modalIconColor','modalBtnBg','modalBtnBgHover'];
+  const els = {};
+  
+  ['radius','width','borderWidth','gradientEnabled','gradientAngle',
+   'iconWhiteOnHover','mobarGradEnabled','mobarAngle'].forEach(id => els[id] = document.getElementById(id));
+
+  colorFields.forEach(id => {
+    els[id] = document.getElementById(id);
+    els['hex-' + id] = document.getElementById('hex-' + id);
+  });
+
+  let iconDebounce = null, modalIconDebounce = null;
+
+  function setVar(name, val){ root.style.setProperty(name, val); }
+
+  function isValidHex(hex) {
+    return /^#([0-9A-F]{3}){1,2}$/i.test(hex);
+  }
+
+  function syncColorPair(id, source) {
+    let val = els[id].value;
+    let hexVal = els['hex-' + id].value;
+
+    if (source === 'picker') {
+      els['hex-' + id].value = val.toUpperCase();
+      state[id] = val;
+    } else if (source === 'hex') {
+      if (!hexVal.startsWith('#')) {
+        hexVal = '#' + hexVal;
+      }
+      if (isValidHex(hexVal)) {
+        if (hexVal.length === 4) {
+          hexVal = '#' + hexVal[1] + hexVal[1] + hexVal[2] + hexVal[2] + hexVal[3] + hexVal[3];
+        }
+        els[id].value = hexVal;
+        state[id] = hexVal;
+      } else {
+        return;
+      }
+    }
+
+    if (id === 'btnText') {
+      clearTimeout(iconDebounce);
+      iconDebounce = setTimeout(recomputeIconFilter, 60);
+    } else if (id === 'modalIconColor') {
+      clearTimeout(modalIconDebounce);
+      modalIconDebounce = setTimeout(recomputeModalIconFilter, 60);
+    }
+
+    render();
+  }
+
+  function currentBtnBackground(){
+    return state.gradientEnabled
+      ? `linear-gradient(${state.gradientAngle}deg, ${state.btnBg}, ${state.gradientColor2})`
+      : state.btnBg;
+  }
+
+  function currentMobarBackground(){
+    return state.mobarGradEnabled
+      ? `linear-gradient(${state.mobarAngle}deg, ${state.mobarC1}, ${state.mobarC2})`
+      : state.mobarC1;
+  }
+
+  function render(){
+    setVar('--radius', state.radius + 'em');
+    setVar('--gap', state.gap + 'px');
+    setVar('--btn-background', currentBtnBackground());
+    setVar('--btn-bg-hover', state.btnBgHover);
+    setVar('--btn-text', state.btnText);
+    setVar('--btn-border-color', state.btnBorder);
+    setVar('--btn-border-width', state.borderWidth + 'px');
+    setVar('--icon-filter', state.iconFilterCss);
+    setVar('--icon-filter-hover', state.iconWhiteOnHover ? 'brightness(0) invert(1)' : state.iconFilterCss);
+    setVar('--addr-bg', state.addrBg);
+    setVar('--addr-text', state.addrText);
+    setVar('--cols', state.cols);
+    setVar('--container-width', state.width + 'px');
+    setVar('--mobar-bg', currentMobarBackground());
+    setVar('--modal-icon-filter', state.modalIconFilterCss);
+    setVar('--modal-btn-bg', state.modalBtnBg);
+    setVar('--modal-btn-bg-hover', state.modalBtnBgHover);
+
+    document.getElementById('v-radius').textContent = state.radius + 'em';
+    document.getElementById('v-width').textContent = state.width + 'px';
+    document.getElementById('v-angle').textContent = state.gradientAngle + 'deg';
+    document.getElementById('v-mobarAngle').textContent = state.mobarAngle + 'deg';
+    document.getElementById('v-borderWidth').textContent = state.borderWidth + 'px';
+
+    renderButtonRows();
+    buildOutput();
+  }
+
+  function buildOutput(){
+    const bgLine = state.gradientEnabled
+      ? `linear-gradient(${state.gradientAngle}deg, ${state.btnBg}, ${state.gradientColor2})`
+      : state.btnBg;
+    const mobarBgLine = state.mobarGradEnabled
+      ? `linear-gradient(${state.mobarAngle}deg, ${state.mobarC1}, ${state.mobarC2})`
+      : state.mobarC1;
+
+    const hoverImgRule = state.iconWhiteOnHover ? `\n\n    img { filter: brightness(0) invert(1); }` : '';
+
+    const code = `@import "@/assets/style/function.scss";
+
+.logo {
+  position: relative;
+  width: size(540);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  margin: size(60) auto size(30);
+}
+
+.lineicon {
+  background: #06c755;
+  border-radius: 20%;
+  aspect-ratio: 1/1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 71%;
+    filter: brightness(0) invert(1);
+  }
+}
+
+.bg-color1 {
+  background-color: ${state.modalBtnBg};
+}
+
+.hover\\:bg-color2:hover {
+  background-color: ${state.modalBtnBgHover};
+}
+
+.mo-contact-info {
+  display: none;
+  z-index: 99;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: size(60);
+  font-size: size(16);
+  font-weight: 500;
+}
+
+// ── 變數 ──────────────────────────────────────────
+$border-radius: ${state.radius}em;
+$gap: ${state.gap}px;
+$cols: 3;
+
+$btn-w: calc((100% - #{$gap} * #{$cols - 1}) / #{$cols});
+
+// ── 共用 mixin ─────────────────────────────────────
+@mixin contact-item-base {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75em;
+  padding: 1.1em 1em;
+  background: ${bgLine};
+  color: ${state.btnText};
+  border: ${state.borderWidth}px solid ${state.btnBorder};
+  border-radius: $border-radius;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.25s, color 0.25s, border-color 0.25s;
+  white-space: nowrap;
+
+  img {
+    width: 1.65em;
+    height: 1.65em;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: ${state.iconFilterCss};
+    transition: filter 0.25s;
+    margin: 0;
+  }
+
+  &:hover {
+    background: ${state.btnBgHover};
+    color: #fff;
+    border-color: ${state.btnBgHover};${hoverImgRule}
+  }
+}
+
+// ── 主體 ───────────────────────────────────────────
+.contact-info {
+  width: min(${state.width}px, 95%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: $gap;
+  padding: 0 0 2em;
+
+  .contact-row {
+    display: grid;
+    width: 100%;
+    gap: $gap;
+    grid-template-columns: repeat(#{$cols}, 1fr);
+
+    .contact-item {
+      @include contact-item-base;
+    }
+
+    &.bottom {
+      gap: 0;
+      grid-template-columns: 1fr $btn-w;
+
+      .contact-item {
+        @include contact-item-base;
+
+        &.address {
+          border: none;
+          background: ${state.addrBg};
+          color: ${state.addrText};
+          cursor: default;
+          white-space: normal;
+          text-align: center;
+          border-radius: $border-radius 0 0 $border-radius;
+
+          &:hover {
+            background: ${state.addrBg};
+            color: ${state.addrText};
+          }
+        }
+
+        &.googlemap {
+          border-radius: 0 $border-radius $border-radius 0;
+        }
+      }
+    }
+  }
+}
+
+.modal-box {
+  img {
+    filter: ${state.modalIconFilterCss};
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .mo-contact-info {
+    display: flex;
+    flex-wrap: wrap;
+    top: auto;
+    bottom: 0;
+    height: auto;
+    width: sizem(375);
+    box-shadow: 0 0 sizem(50) rgba(0, 0, 0, 0.501);
+    font-size: sizem(16);
+    background: ${mobarBgLine};
+
+    .contact-item {
+      flex: 1;
+      padding: 0;
+      color: #fff;
+      min-width: 4em;
+      border-left: 1px solid #fff6;
+      height: sizem(63);
+
+      img {
+        height: 1.03em;
+        filter: brightness(0) invert(1);
+      }
+    }
+  }
+
+  .logo {
+    width: sizem(290);
+    margin: sizem(40) auto sizem(30) auto;
+  }
+
+  .contact-info {
+    width: sizem(310);
+
+    .contact-row {
+      grid-template-columns: 1fr;
+      gap: 12px;
+
+      .contact-item {
+        position: relative;
+        justify-content: center;
+
+        img {
+          position: absolute;
+          left: 3em;
+          top: 50%;
+          transform: translateY(-50%);
+        }
+      }
+
+      &.bottom {
+        grid-template-columns: 1fr;
+        gap: 0;
+
+        .contact-item {
+          &.address {
+            border: ${state.borderWidth}px solid ${state.btnBorder};
+            border-bottom: none;
+            border-radius: $border-radius $border-radius 0 0;
+            white-space: normal;
+          }
+
+          &.googlemap {
+            border-radius: 0 0 $border-radius $border-radius;
+          }
+        }
+      }
+    }
+  }
+}`;
+    document.getElementById('output').textContent = code;
+  }
+
+  function recomputeIconFilter(){ state.iconFilterCss = computeIconFilter(state.btnText); render(); }
+  function recomputeModalIconFilter(){ state.modalIconFilterCss = computeIconFilter(state.modalIconColor); render(); }
+
+  /* Event Listeners */
+  els.radius.addEventListener('input', e => { state.radius = +e.target.value; render(); });
+  els.width.addEventListener('input', e => { state.width = +e.target.value; render(); });
+  els.borderWidth.addEventListener('input', e => { state.borderWidth = +e.target.value; render(); });
+  els.iconWhiteOnHover.addEventListener('change', e => { state.iconWhiteOnHover = e.target.checked; render(); });
+
+  els.gradientEnabled.addEventListener('change', e => { state.gradientEnabled = e.target.checked; render(); });
+  els.gradientAngle.addEventListener('input', e => { state.gradientAngle = +e.target.value; render(); });
+
+  els.mobarGradEnabled.addEventListener('change', e => { state.mobarGradEnabled = e.target.checked; render(); });
+  els.mobarAngle.addEventListener('input', e => { state.mobarAngle = +e.target.value; render(); });
+
+  colorFields.forEach(id => {
+    els[id].addEventListener('input', () => syncColorPair(id, 'picker'));
+    els['hex-' + id].addEventListener('input', () => syncColorPair(id, 'hex'));
+  });
+
+  document.getElementById('reset').addEventListener('click', () => {
+    Object.assign(state, {
+      cols: 3, radius: 0.9, width: 1200,
+      btnBg: '#5c5c5c', gradientEnabled: false, gradientColor2: '#7a5c33', gradientAngle: 135,
+      btnBgHover: '#3f2727', btnText: '#ffffff', btnBorder: '#003320', borderWidth: 0,
+      iconFilterCss: 'brightness(0) invert(1)', iconWhiteOnHover: false,
+      fontSize: 16,
+      addrBg: '#ffffff', addrText: '#000000',
+      mobarC1: '#524f5f', mobarGradEnabled: false, mobarC2: '#494ca7', mobarAngle: 0,
+      modalIconColor: '#6e6e6e', modalIconFilterCss: 'brightness(0) invert(43%) sepia(0%) saturate(1053%) hue-rotate(143deg) brightness(92%) contrast(83%)',
+      modalBtnBg: '#808080', modalBtnBgHover: '#3b3b3b'
+    });
+    els.radius.value = 0.9; els.width.value = 1200; els.borderWidth.value = 0;
+    els.iconWhiteOnHover.checked = false;
+    els.gradientEnabled.checked = false; els.gradientAngle.value = 135;
+    els.mobarGradEnabled.checked = false; els.mobarAngle.value = 0;
+    
+    colorFields.forEach(id => {
+      els[id].value = state[id];
+      els['hex-' + id].value = state[id].toUpperCase();
+    });
+
+    render();
+  });
+
+  /* Tabs */
+  document.querySelector('.tabs').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-tab]');
+    if (!btn) return;
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+
+  /* Copy CSS */
+  document.getElementById('copyBtn').addEventListener('click', () => {
+    const text = document.getElementById('output').textContent;
+    const btn = document.getElementById('copyBtn');
+    navigator.clipboard.writeText(text).then(() => {
+      const original = btn.textContent;
+      btn.textContent = '已複製 ✓';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1500);
+    }).catch(() => {
+      btn.textContent = '複製失敗';
+    });
+  });
+
+  /* SVG Download Generator (Dual Artboard: Desktop + Mobile) */
+  document.getElementById('dlSvgBtn').addEventListener('click', () => {
+    const rPx = Math.round(state.radius * 16);
+    
+    let btnFillDef = state.btnBg;
+    let defsCode = '';
+    if (state.gradientEnabled) {
+      btnFillDef = "url(#btnGradient)";
+      defsCode = `
+      <linearGradient id="btnGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="${state.btnBg}" />
+        <stop offset="100%" stop-color="${state.gradientColor2}" />
+      </linearGradient>`;
+    }
+
+    let mobarFillDef = state.mobarC1;
+    if (state.mobarGradEnabled) {
+      mobarFillDef = "url(#mobarGrad)";
+      defsCode += `
+      <linearGradient id="mobarGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+        <stop offset="0%" stop-color="${state.mobarC1}" />
+        <stop offset="100%" stop-color="${state.mobarC2}" />
+      </linearGradient>`;
+    }
+
+    const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 620" width="1320" height="620">
+  <defs>
+    <style>
+      .artboard-title { font-family: sans-serif; font-size: 20px; font-weight: 700; fill: #ffffff; }
+      .btn-bg { fill: ${btnFillDef}; stroke: ${state.btnBorder}; stroke-width: ${state.borderWidth}px; }
+      .btn-text { fill: ${state.btnText}; font-family: sans-serif; font-size: 15px; font-weight: 700; text-anchor: middle; }
+      .addr-bg { fill: ${state.addrBg}; }
+      .addr-text { fill: ${state.addrText}; font-family: sans-serif; font-size: 15px; font-weight: 700; text-anchor: middle; }
+      .icon-fill { fill: ${state.btnText}; }
+      .bar-text { fill: #ffffff; font-family: sans-serif; font-size: 12px; text-anchor: middle; }
+    </style>${defsCode}
+  </defs>
+
+  <!-- Main Background -->
+  <rect width="1320" height="620" fill="#181a20" />
+
+  <!-- ==================== ARTBOARD 1: DESKTOP ==================== -->
+  <g transform="translate(30, 30)">
+    <text x="0" y="24" class="artboard-title">電腦版 (Desktop Layout)</text>
+    
+    <!-- Desktop Background Frame -->
+    <rect x="0" y="40" width="820" height="520" rx="16" fill="#EFEAD7" />
+
+    <!-- Desktop Contact Container (Scaled for display) -->
+    <g transform="translate(40, 160)">
+      <!-- Top Row (3 Buttons) -->
+      <!-- Btn 1: Phone -->
+      <g transform="translate(0, 0)">
+        <rect width="233" height="52" rx="${rPx}" class="btn-bg" />
+        <path class="icon-fill" d="M20 15.5c-1.2 0-2.4-.2-3.6-.6-.4-.1-.8 0-1.1.3l-2.2 2.2c-2.8-1.4-5.1-3.8-6.6-6.6l2.2-2.2c.3-.3.4-.7.3-1.1-.4-1.2-.6-2.4-.6-3.6 0-.6-.5-1-1-1H4c-.6 0-1 .5-1 1 0 9.4 7.6 17 17 17 .6 0 1-.4 1-1v-3.5c0-.5-.5-1-1-1z" transform="translate(35, 14)" />
+        <text x="135" y="32" class="btn-text">02-12345678</text>
+      </g>
+
+      <!-- Btn 2: FB Messenger -->
+      <g transform="translate(253, 0)">
+        <rect width="233" height="52" rx="${rPx}" class="btn-bg" />
+        <path class="icon-fill" d="M12 2C6.5 2 2 6.1 2 11.2c0 2.9 1.4 5.5 3.7 7.2V22l3.4-1.9c.9.3 1.9.4 2.9.4 5.5 0 10-4.1 10-9.2S17.5 2 12 2zm1.1 12.4l-2.6-2.8-5.1 2.8 5.6-5.9 2.7 2.8 5-2.8-5.6 5.9z" transform="translate(35, 14)" />
+        <text x="135" y="32" class="btn-text">Facebook 諮詢</text>
+      </g>
+
+      <!-- Btn 3: FB Fanpage -->
+      <g transform="translate(506, 0)">
+        <rect width="233" height="52" rx="${rPx}" class="btn-bg" />
+        <path class="icon-fill" d="M18 2h-3c-2.8 0-5 2.2-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7c0-.6.4-1 1-1h3V2z" transform="translate(35, 12)" />
+        <text x="135" y="32" class="btn-text">前往粉絲專頁</text>
+      </g>
+
+      <!-- Bottom Row: Address + Google Map -->
+<g transform="translate(0, 67)">
+  <!-- Address: 左上與左下圓角 (x=0, y=0 到 width=506, height=52) -->
+  <path class="addr-bg" d="
+    M ${rPx},0 
+    L 506,0 
+    L 506,52 
+    L ${rPx},52 
+    A ${rPx},${rPx} 0 0 1 0,${52 - rPx} 
+    L 0,${rPx} 
+    A ${rPx},${rPx} 0 0 1 ${rPx},0 Z
+  " />
+  <text x="253" y="32" class="addr-text">地址：地址待提供</text>
+
+  <!-- Google Map Nav: 右上與右下圓角 (x=0, y=0 到 width=233, height=52) -->
+  <g transform="translate(506, 0)">
+    <path class="btn-bg" d="
+      M 0,0 
+      L ${233 - rPx},0 
+      A ${rPx},${rPx} 0 0 1 233,${rPx} 
+      L 233,${52 - rPx} 
+      A ${rPx},${rPx} 0 0 1 ${233 - rPx},52 
+      L 0,52 Z
+    " />
+    <path class="icon-fill" d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5c-1.4 0-2.5-1.1-2.5-2.5s1.1-2.5 2.5-2.5 2.5 1.1 2.5 2.5-1.1 2.5-2.5 2.5z" transform="translate(30, 14)" />
+    <text x="130" y="32" class="btn-text">導航 GoogleMap</text>
+  </g>
+</g>
+    </g>
+
+    <!-- Floating LINE Icon -->
+    <g transform="translate(740, 480)">
+      <rect width="56" height="56" rx="12" fill="#06c755" />
+      <path fill="#fff" d="M19.34 2C10.87 2 4 7.82 4 15c0 6.43 5.48 11.82 12.87 12.82.5.11 1.18.33 1.35.76.15.39.1.99.05 1.38l-.22 1.32c-.07.41-.32 1.61 1.41.88 1.73-.73 9.35-5.5 12.76-9.42C34.39 20 34.68 17.61 34.68 15c0-7.18-6.87-13-15.34-13z" transform="translate(9, 9) scale(0.9)" />
+    </g>
+  </g>
+
+  <!-- ==================== ARTBOARD 2: MOBILE ==================== -->
+  <g transform="translate(890, 30)">
+    <text x="0" y="24" class="artboard-title">手機版 (Mobile Layout)</text>
+
+    <!-- Mobile Phone Frame -->
+    <g transform="translate(10, 40)">
+      <rect width="375" height="520" rx="20" fill="#EFEAD7" />
+
+      <!-- Mobile Contact Content -->
+      <g transform="translate(32, 40)">
+        <!-- Item 1: Phone -->
+        <g transform="translate(0, 0)">
+          <rect width="311" height="52" rx="${rPx}" class="btn-bg" />
+          <path class="icon-fill" d="M20 15.5c-1.2 0-2.4-.2-3.6-.6-.4-.1-.8 0-1.1.3l-2.2 2.2c-2.8-1.4-5.1-3.8-6.6-6.6l2.2-2.2c.3-.3.4-.7.3-1.1-.4-1.2-.6-2.4-.6-3.6 0-.6-.5-1-1-1H4c-.6 0-1 .5-1 1 0 9.4 7.6 17 17 17 .6 0 1-.4 1-1v-3.5c0-.5-.5-1-1-1z" transform="translate(50, 14)" />
+          <text x="170" y="32" class="btn-text">02-12345678</text>
+        </g>
+
+        <!-- Item 2: FB Messenger -->
+        <g transform="translate(0, 67)">
+          <rect width="311" height="52" rx="${rPx}" class="btn-bg" />
+          <path class="icon-fill" d="M12 2C6.5 2 2 6.1 2 11.2c0 2.9 1.4 5.5 3.7 7.2V22l3.4-1.9c.9.3 1.9.4 2.9.4 5.5 0 10-4.1 10-9.2S17.5 2 12 2zm1.1 12.4l-2.6-2.8-5.1 2.8 5.6-5.9 2.7 2.8 5-2.8-5.6 5.9z" transform="translate(50, 14)" />
+          <text x="175" y="32" class="btn-text">Facebook 諮詢</text>
+        </g>
+
+        <!-- Item 3: FB Fanpage -->
+        <g transform="translate(0, 134)">
+          <rect width="311" height="52" rx="${rPx}" class="btn-bg" />
+          <path class="icon-fill" d="M18 2h-3c-2.8 0-5 2.2-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7c0-.6.4-1 1-1h3V2z" transform="translate(52, 12)" />
+          <text x="175" y="32" class="btn-text">前往粉絲專頁</text>
+        </g>
+
+        <!-- Address Block -->
+        <g transform="translate(0, 201)">
+          <path class="addr-bg" stroke="${state.btnBorder}" stroke-width="${state.borderWidth}" d="M 0,${rPx} A ${rPx},${rPx} 0 0 1 ${rPx},0 L ${311 - rPx},0 A ${rPx},${rPx} 0 0 1 311,${rPx} L 311,52 L 0,52 Z" />
+          <text x="155" y="32" class="addr-text">地址：地址待提供</text>
+        </g>
+
+        <!-- Google Map Navigation -->
+        <g transform="translate(0, 253)">
+          <path class="btn-bg" d="M 0,0 L 311,0 L 311,${52 - rPx} A ${rPx},${rPx} 0 0 1 ${311 - rPx},52 L ${rPx},52 A ${rPx},${rPx} 0 0 1 0,${52 - rPx} Z" />
+          <path class="icon-fill" d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5c-1.4 0-2.5-1.1-2.5-2.5s1.1-2.5 2.5-2.5 2.5 1.1 2.5 2.5-1.1 2.5-2.5 2.5z" transform="translate(50, 14)" />
+          <text x="175" y="32" class="btn-text">導航 GoogleMap</text>
+        </g>
+      </g>
+
+      <!-- Mobile Bottom Navigation Bar -->
+      <g transform="translate(0, 457)">
+        <path d="M 0,0 L 375,0 L 375,43 A 20,20 0 0 1 355,63 L 20,63 A 20,20 0 0 1 0,43 Z" fill="${mobarFillDef}" />
+        <line x1="75" y1="0" x2="75" y2="63" stroke="rgba(255,255,255,0.3)" />
+        <line x1="150" y1="0" x2="150" y2="63" stroke="rgba(255,255,255,0.3)" />
+        <line x1="225" y1="0" x2="225" y2="63" stroke="rgba(255,255,255,0.3)" />
+        <line x1="300" y1="0" x2="300" y2="63" stroke="rgba(255,255,255,0.3)" />
+
+        <!-- Btn 1 -->
+        <path fill="#fff" d="M12 11c-.7 0-1.4-.1-2.1-.4l-1.3 1.3c-1.7-.8-3.1-2.2-4-4l1.3-1.3C5.6 5.9 5.5 5.2 5.5 4.5 5.5 4.2 5.3 4 5 4H2.5C2.2 4 2 4.2 2 4.5 2 10.3 6.7 15 12.5 15c.3 0 .5-.2.5-.5V12c0-.3-.2-.5-.5-.5z" transform="translate(30, 12)" />
+        <text x="37.5" y="48" class="bar-text">撥打電話</text>
+
+        <!-- Btn 2 -->
+        <path fill="#fff" d="M8 2C4.3 2 1.3 4.7 1.3 8c0 1.9.9 3.6 2.4 4.7V15l2.2-1.2c.6.2 1.4.3 2.1.3 3.7 0 6.7-2.7 6.7-6S11.7 2 8 2z" transform="translate(105, 12)" />
+        <text x="112.5" y="48" class="bar-text">FB 諮詢</text>
+
+        <!-- Btn 3 -->
+        <path fill="#fff" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" transform="translate(180, 12)" />
+        <text x="187.5" y="48" class="bar-text">預約賞屋</text>
+
+        <!-- Btn 4 -->
+        <path fill="#fff" d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5c-1.4 0-2.5-1.1-2.5-2.5s1.1-2.5 2.5-2.5 2.5 1.1 2.5 2.5-1.1 2.5-2.5 2.5z" transform="translate(255, 12)" />
+        <text x="262.5" y="48" class="bar-text">地圖導航</text>
+
+        <!-- Btn 5 -->
+        <path fill="#fff" d="M19.34 2C10.87 2 4 7.82 4 15c0 6.43 5.48 11.82 12.87 12.82.5.11 1.18.33 1.35.76.15.39.1.99.05 1.38l-.22 1.32c-.07.41-.32 1.61 1.41.88 1.73-.73 9.35-5.5 12.76-9.42C34.39 20 34.68 17.61 34.68 15c0-7.18-6.87-13-15.34-13z" transform="translate(328, 12) scale(0.55)" />
+        <text x="337.5" y="48" class="bar-text">官方LINE</text>
+      </g>
+    </g>
+  </g>
+</svg>`;
+
+    const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'contact-style-desktop-and-mobile.svg';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
