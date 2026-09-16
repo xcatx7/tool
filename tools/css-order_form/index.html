@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>表單 CSS 調整與 SVG 導出工具</title>
+  <style>
+    :root {
+      --panel: #ffffff;
+      --ink: #1c1a18;
+      --muted: #6b665f;
+      --line: #e4e0d8;
+      --accent: #A30C24;
+      --accent-hover: #82091d;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      background: #f6f5f2;
+      color: var(--ink);
+    }
+
+    .wrap {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      min-height: 100vh;
+    }
+
+    @media (max-width: 980px) {
+      .wrap {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Left Controls Panel */
+    .panel {
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+      padding: 24px 20px 60px;
+      overflow-y: auto;
+      max-height: 100vh;
+      position: sticky;
+      top: 0;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.03);
+    }
+
+    @media (max-width: 980px) {
+      .panel {
+        position: static;
+        max-height: none;
+        border-right: none;
+        border-bottom: 1px solid var(--line);
+      }
+    }
+
+    .panel h1 {
+      font-size: 17px;
+      letter-spacing: .02em;
+      margin: 0 0 16px;
+      color: var(--ink);
+      border-bottom: 2px solid var(--line);
+      padding-bottom: 10px;
+    }
+
+    .presetbtns {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .presetbtns button {
+      flex: 1;
+      padding: 9px 0;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    #presetLight {
+      background: #e9e6e2;
+      color: #333;
+      border: 1px solid #d8d4cc;
+    }
+
+    #presetLight:hover {
+      background: #dcd7cf;
+    }
+
+    #presetDark {
+      background: #00476b;
+      color: #fff;
+      border: 1px solid #00476b;
+    }
+
+    #presetDark:hover {
+      background: #003652;
+    }
+
+    fieldset {
+      border: 0;
+      padding: 0;
+      margin: 0 0 18px;
+    }
+
+    legend {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: .04em;
+      margin-bottom: 10px;
+      padding: 0;
+    }
+
+    .field {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-size: 12.5px;
+    }
+
+    .field label {
+      flex: 1.2;
+      color: #3a3733;
+      font-weight: 500;
+    }
+
+    .field .val {
+      width: 44px;
+      text-align: right;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      font-size: 11.5px;
+    }
+
+    .field .hex-val {
+      width: 58px;
+      text-align: center;
+      color: var(--muted);
+      font-family: monospace;
+      font-size: 11px;
+      background: #f0eee9;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+
+    input[type="range"] {
+      flex: 1.4;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    input[type="color"] {
+      width: 34px;
+      height: 26px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0;
+      background: none;
+      cursor: pointer;
+    }
+
+    select {
+      flex: 1.4;
+      padding: 5px 6px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      font-size: 12px;
+      background: #fff;
+    }
+
+    .segbtns {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .segbtns button {
+      flex: 1;
+      padding: 8px 0;
+      font-size: 12.5px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #555;
+      border-radius: 7px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all .2s;
+    }
+
+    .segbtns button.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .copybtn {
+      width: 100%;
+      padding: 11px 0;
+      background: var(--accent);
+      color: #fff;
+      border: 0;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 600;
+      letter-spacing: .05em;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: background .2s;
+    }
+
+    .copybtn:hover {
+      background: var(--accent-hover);
+    }
+
+    .copybtn.done {
+      background: #3a7d44;
+    }
+
+    /* Right Stage & Preview */
+    .stage {
+      padding: 36px 32px 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    .stage-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .stage-head h2 {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: .06em;
+      margin: 0;
+    }
+
+    .preview-shell {
+      background: repeating-conic-gradient(#eceae4 0% 25%, #f6f5f2 0% 50%) 50% / 18px 18px;
+      border-radius: 14px;
+      padding: 26px;
+      display: flex;
+      justify-content: center;
+      border: 1px solid var(--line);
+    }
+
+    .order-preview {
+      background: var(--page-bg);
+      border-radius: 6px;
+      padding: 2.5em 20px 3em;
+      text-align: center;
+      width: 100%;
+      font-size: var(--font-desktop);
+      transition: max-width .3s;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
+
+    .preview-shell.sim-mobile .order-preview {
+      max-width: 375px;
+      font-size: var(--font-mobile);
+    }
+
+    .order-title {
+      font-size: 2.4em;
+      font-weight: 700;
+      color: var(--title-color);
+      padding-top: .2em;
+      letter-spacing: .05em;
+    }
+
+    .order-subTitle {
+      font-size: 1.05em;
+      padding-top: .5em;
+      letter-spacing: .05em;
+      color: var(--subtitle-color);
+    }
+
+    .p-form {
+      width: min(var(--form-max-width), 96%);
+      display: flex;
+      gap: 4em;
+      margin: 2.5em auto 2.5em;
+      align-items: stretch;
+      position: relative;
+      text-align: left;
+    }
+
+    .preview-shell.sim-mobile .p-form {
+      flex-direction: column;
+      gap: 1.1em;
+      width: 100%;
+      margin: 1.8em auto 1.1em;
+    }
+
+    .p-form::after {
+      content: "";
+      width: 1px;
+      background: var(--divider-color);
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      margin: auto;
+    }
+
+    .preview-shell.sim-mobile .p-form::after {
+      display: none;
+    }
+
+    .p-left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25em;
+    }
+
+    .p-right {
+      flex: 1;
+      display: flex;
+    }
+
+    .p-name-wrap {
+      display: flex;
+      gap: .7em;
+      align-items: stretch;
+    }
+
+    .p-name-wrap .p-row {
+      flex: 1;
+    }
+
+    .p-gender {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: .3em;
+      font-size: .95em;
+      color: var(--label-color);
+      white-space: nowrap;
+    }
+
+    .p-gender label {
+      display: flex;
+      align-items: center;
+      gap: .3em;
+      cursor: pointer;
+    }
+
+    .p-row {
+      background: var(--input-bg);
+      color: var(--content-color);
+      display: flex;
+      align-items: center;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .p-row.style-full {
+      border: var(--input-border-w) solid var(--input-border-color);
+      border-radius: var(--input-radius);
+    }
+
+    .p-row.style-bottom {
+      border: 0;
+      border-bottom: var(--input-border-w) solid var(--input-border-color);
+      border-radius: 0;
+    }
+
+    .p-row>span {
+      min-width: 5.5em;
+      padding-left: 1em;
+      font-size: 1em;
+      color: var(--label-color);
+      font-weight: 500;
+    }
+
+    .p-row>span>i {
+      color: var(--asterisk-color);
+      font-style: normal;
+      font-weight: bold;
+      margin-left: 2px;
+    }
+
+    .p-row input,
+    .p-row select {
+      background: transparent;
+      flex: 1;
+      border: 0;
+      outline: 0;
+      padding: .8em .6em .8em 0;
+      font-size: 1em;
+      color: inherit;
+      font-family: inherit;
+      appearance: none;
+    }
+
+    .p-row input::placeholder {
+      color: var(--placeholder-color);
+      opacity: 1;
+    }
+
+    .p-row select {
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23666666'><path d='M7 10l5 5 5-5z'/></svg>");
+      background-repeat: no-repeat;
+      background-position: calc(100% - .6em) center;
+      background-size: 16px;
+    }
+
+    .p-textarea {
+      width: 100%;
+      flex: 1;
+      background: var(--input-bg);
+      color: var(--content-color);
+      padding: .9em 1em;
+      font-size: 1em;
+      font-family: inherit;
+      resize: none;
+      outline: 0;
+    }
+
+    .p-textarea::placeholder {
+      color: var(--placeholder-color);
+      opacity: 1;
+    }
+
+    .p-textarea.style-full {
+      border: var(--input-border-w) solid var(--input-border-color);
+      border-radius: var(--input-radius);
+    }
+
+    .p-textarea.style-bottom {
+      border: 0;
+      border-bottom: var(--input-border-w) solid var(--input-border-color);
+      border-radius: 0;
+    }
+
+    .preview-shell.sim-mobile .p-textarea {
+      min-height: 7em;
+      flex: none;
+    }
+
+    .p-policy {
+      display: flex;
+      gap: .5em;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1.8em;
+      font-size: .9em;
+    }
+
+    .p-policy p {
+      margin: 0;
+      color: var(--policy-text-color);
+    }
+
+    .p-policy a {
+      color: var(--policy-link-color);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .p-recaptcha {
+      width: 340px;
+      height: 78px;
+      margin: 1.6em auto 0;
+      background: #f9f9f9;
+      border: 1px solid #d3d3d3;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #999;
+    }
+
+    .preview-shell.sim-mobile .p-recaptcha {
+      max-width: 100%;
+    }
+
+    .p-send-wrap {
+      margin: 1.8em auto 0;
+      text-align: center;
+    }
+
+    .p-send {
+      font-size: var(--btn-font-size);
+      background: var(--btn-bg);
+      border: 0;
+      padding: .7em 0;
+      letter-spacing: .5em;
+      text-indent: .5em;
+      border-radius: 2em;
+      width: 16em;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform .3s;
+    }
+
+    .p-send:hover {
+      transform: scale(1.03);
+    }
+
+    .out-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .out-head h2 {
+      margin: 0;
+    }
+
+    .out-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-action {
+      padding: 7px 16px;
+      font-size: 12.5px;
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background .2s;
+    }
+
+    .btn-action.primary {
+      background: var(--ink);
+      color: #fff;
+    }
+
+    .btn-action.primary:hover {
+      background: #333;
+    }
+
+    .btn-action.primary.done {
+      background: #3a7d44;
+    }
+
+    .btn-action.secondary {
+      background: #2c3e50;
+      color: #fff;
+    }
+
+    .btn-action.secondary:hover {
+      background: #1a252f;
+    }
+
+    pre#scssOut {
+      background: #1e1c1a;
+      color: #e9e5da;
+      font-family: "SF Mono", Consolas, Menlo, monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      padding: 20px;
+      border-radius: 10px;
+      overflow-x: auto;
+      max-height: 440px;
+      white-space: pre;
+      margin: 0;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.7;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- STREAMING_CHUNK: Building control panel DOM structure with precise inputs -->
+  <div class="wrap">
+
+    <!-- Left Control Panel -->
+    <div class="panel">
+      <h1>表單 CSS 調整工具</h1>
+
+      <!-- Theme Preset Buttons -->
+      <div class="presetbtns">
+        <button type="button" id="presetLight">淺色板</button>
+        <button type="button" id="presetDark">深色板</button>
+      </div>
+
+      <!-- Overall Layout Settings -->
+      <fieldset>
+        <legend>整體與尺寸</legend>
+        <div class="field">
+          <label>背景色</label>
+          <span class="hex-val" id="pageBgHex">#E9E6E2</span>
+          <input type="color" id="pageBg" value="#E9E6E2">
+        </div>
+        <div class="field">
+          <label>背景透明度</label>
+          <input type="range" id="pageBgAlpha" min="0" max="100" value="100">
+          <span class="val" id="pageBgAlphaVal">100%</span>
+        </div>
+        <div class="field"><label>桌面文字大小</label><input type="range" id="fontDesktop" min="12" max="20" value="15"><span
+            class="val" id="fontDesktopVal">15px</span></div>
+        <div class="field"><label>手機文字大小</label><input type="range" id="fontMobile" min="12" max="20" value="15"><span
+            class="val" id="fontMobileVal">15px</span></div>
+      </fieldset>
+
+      <!-- Header Style Settings -->
+      <fieldset>
+        <legend>標題樣式</legend>
+        <div class="field">
+          <label>主標題顏色</label>
+          <span class="hex-val" id="titleColorHex">#918177</span>
+          <input type="color" id="titleColor" value="#918177">
+        </div>
+        <div class="field">
+          <label>副標題顏色</label>
+          <span class="hex-val" id="subtitleColorHex">#000000</span>
+          <input type="color" id="subtitleColor" value="#000000">
+        </div>
+      </fieldset>
+
+      <!-- Layout & Divider -->
+      <fieldset>
+        <legend>表單版面</legend>
+        <div class="field"><label>欄位最大寬度</label><input type="range" id="formWidth" min="600" max="1400" step="20"
+            value="1000"><span class="val" id="formWidthVal">1000</span></div>
+        <div class="field">
+          <label>中間分隔線顏色</label>
+          <span class="hex-val" id="dividerColorHex">#000000</span>
+          <input type="color" id="dividerColor" value="#000000">
+        </div>
+        <div class="field"><label>分隔線透明度</label><input type="range" id="dividerOpacity" min="0" max="100"
+            value="15"><span class="val" id="dividerOpacityVal">15%</span></div>
+      </fieldset>
+
+      <!-- Input Controls -->
+      <fieldset>
+        <legend>輸入欄位</legend>
+        <div class="segbtns">
+          <button type="button" id="btnBorderFull" class="active">整體邊框</button>
+          <button type="button" id="btnBorderBottom">僅下邊框</button>
+        </div>
+        <div class="field">
+          <label>欄位背景色</label>
+          <span class="hex-val" id="inputBgHex">#FFFFFF</span>
+          <input type="color" id="inputBg" value="#ffffff">
+        </div>
+        <div class="field"><label>背景透明度</label><input type="range" id="inputBgAlpha" min="0" max="100" value="100"><span
+            class="val" id="inputBgAlphaVal">100%</span></div>
+        <div class="field">
+          <label>邊框顏色</label>
+          <span class="hex-val" id="inputBorderColorHex">#FFFFFF</span>
+          <input type="color" id="inputBorderColor" value="#ffffff">
+        </div>
+        <div class="field">
+          <label>邊框透明度</label>
+          <input type="range" id="inputBorderAlpha" min="0" max="100" value="100">
+          <span class="val" id="inputBorderAlphaVal">100%</span>
+        </div>
+        <div class="field"><label>邊框粗細</label><input type="range" id="inputBorderW" min="0" max="4" value="1"><span
+            class="val" id="inputBorderWVal">1px</span></div>
+        <div class="field" id="radiusRow"><label>圓角</label><input type="range" id="inputRadius" min="0" max="40"
+            value="10"><span class="val" id="inputRadiusVal">10px</span></div>
+        <div class="field">
+          <label>標題欄位顏色</label>
+          <span class="hex-val" id="labelColorHex">#000000</span>
+          <input type="color" id="labelColor" value="#000000">
+        </div>
+        <div class="field">
+          <label>內容 / Placeholder</label>
+          <select id="contentMode">
+            <option value="black">深字模式 (黑/灰)</option>
+            <option value="white">淺字模式 (白/淺灰)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>個資聲明顏色</label>
+          <select id="policyMode">
+            <option value="light">標準 (黑字+紅連結)</option>
+            <option value="white">白字 (白字+黃連結)</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <!-- Submit Button Controls -->
+      <fieldset>
+        <legend>送出按鈕</legend>
+        <div class="field"><label>按鈕字級</label><input type="range" id="btnFontSize" min="14" max="26" value="18"><span
+            class="val" id="btnFontSizeVal">18px</span></div>
+        <div class="segbtns">
+          <button type="button" id="btnColorSolid" class="active">純色</button>
+          <button type="button" id="btnColorGradient">漸層</button>
+        </div>
+        <div class="field">
+          <label>按鈕顏色 1</label>
+          <span class="hex-val" id="btnColor1Hex">#9F8A7A</span>
+          <input type="color" id="btnColor1" value="#9f8a7a">
+        </div>
+        <div class="field" id="btnColor2Row" style="display:none;">
+          <label>按鈕顏色 2</label>
+          <span class="hex-val" id="btnColor2Hex">#8C7869</span>
+          <input type="color" id="btnColor2" value="#8c7869">
+        </div>
+        <div class="field" id="btnAngleRow" style="display:none;"><label>漸層角度</label><input type="range" id="btnAngle"
+            min="0" max="360" value="135"><span class="val" id="btnAngleVal">135°</span></div>
+      </fieldset>
+
+      <button class="copybtn" id="copyBtnTop">複製 SCSS 程式碼</button>
+    </div>
+
+    <!-- STREAMING_CHUNK: Rendering live interactive stage, preview, and output pre element -->
+    <div class="stage">
+
+      <div>
+        <div class="stage-head">
+          <h2>即時預覽 (Live Preview)</h2>
+          <div class="segbtns" style="margin:0; width: 180px;">
+            <button type="button" id="btnModeDesktop" class="active">電腦板</button>
+            <button type="button" id="btnModeMobile">手機板</button>
+          </div>
+        </div>
+
+        <div class="preview-shell" id="previewShell">
+          <div class="order-preview">
+            <div class="order-title">預約賞屋</div>
+            <div class="order-subTitle">請留下資料，將有專人將盡快與您聯繫</div>
+
+            <div class="p-form">
+              <div class="p-left">
+                <div class="p-name-wrap">
+                  <label class="p-row style-full">
+                    <span>姓名<i>*</i></span>
+                    <input type="text" placeholder="請填寫姓名">
+                  </label>
+                  <div class="p-gender">
+                    <label><input type="radio" name="pgender" checked>先生</label>
+                    <label><input type="radio" name="pgender">女士</label>
+                  </div>
+                </div>
+                <label class="p-row style-full">
+                  <span>手機<i>*</i></span>
+                  <input type="text" placeholder="請填寫電話">
+                </label>
+                <label class="p-row style-full">
+                  <span>居住縣市</span>
+                  <select>
+                    <option>請選擇縣市</option>
+                    <option>台北市</option>
+                    <option>新北市</option>
+                  </select>
+                </label>
+                <label class="p-row style-full">
+                  <span>居住地區</span>
+                  <select>
+                    <option>請選擇地區</option>
+                    <option>大安區</option>
+                    <option>信義區</option>
+                  </select>
+                </label>
+              </div>
+              <div class="p-right">
+                <textarea class="p-textarea style-full" placeholder="(非必填) 請輸入您的留言"></textarea>
+              </div>
+            </div>
+
+            <div class="p-policy">
+              <input type="checkbox">
+              <p>本人知悉並同意<a>「個資告知事項聲明」</a>內容</p>
+            </div>
+
+            <div class="p-recaptcha">reCAPTCHA 340×78</div>
+
+            <div class="p-send-wrap">
+              <button class="p-send">送 出 表 單</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="out-head">
+          <h2>SCSS 輸出 (用於 order.vue 或專案樣式表)</h2>
+          <div class="out-actions">
+            <button class="btn-action secondary" id="downloadSvgBtn">下載 SVG 預覽圖</button>
+            <button class="btn-action primary" id="copyBtnBottom">複製 SCSS</button>
+          </div>
+        </div>
+        <pre id="scssOut"></pre>
+        <p class="hint">說明：此區塊自動產出對應之 SCSS 變數與樣式。可直接複製套用至 Vue / HTML 專案，或點擊「下載 SVG 預覽圖」導出高解析度向量檔。</p>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- STREAMING_CHUNK: Initializing JavaScript logic, presets, SCSS generation, and SVG vector export -->
+  <script>
+    const root = document.documentElement.style;
+    let borderStyle = "full";
+    let btnColorMode = "solid";
+
+    function v(id) { return document.getElementById(id).value; }
+    function setv(id, val) { document.getElementById(id).value = val; }
+    function hexToRgb(hex) { const h = hex.replace("#", ""); const bigint = parseInt(h, 16); return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255]; }
+    function rgba(hex, alphaPct) { const [r, g, b] = hexToRgb(hex); return `rgba(${r}, ${g}, ${b}, ${(alphaPct / 100).toFixed(2)})`; }
+    // 8-digit hex (#RRGGBBAA) instead of rgba() — plain hex strings are easier for
+    // another AI / text tool to read and edit directly inside the exported SCSS/SVG.
+    function toHex2(n) { return Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0").toUpperCase(); }
+    function hexAlpha(hex, alphaPct) { return hex.toUpperCase() + toHex2(alphaPct / 100 * 255); }
+    // SVG/Illustrator has no 8-digit hex support — split back into a plain 6-digit
+    // hex plus a separate opacity fraction (fill-opacity / stroke-opacity), which
+    // every vector app (and every browser) reads correctly.
+    function splitHexAlpha(hex) {
+      const h = hex.replace("#", "");
+      if (h.length === 8) {
+        return { hex: "#" + h.slice(0, 6).toUpperCase(), opacity: +(parseInt(h.slice(6, 8), 16) / 255).toFixed(2) };
+      }
+      return { hex: "#" + h.toUpperCase(), opacity: 1 };
+    }
+
+    function contentColors(mode) {
+      return mode === "white"
+        ? { content: "#ffffff", asterisk: "#ffff00", placeholder: "#FFFFFFB3" }
+        : { content: "#000000", asterisk: "#d9534f", placeholder: "#999999" };
+    }
+    function policyColors(mode) {
+      return mode === "white"
+        ? { text: "#ffffff", link: "#ffff00" }
+        : { text: "#000000", link: "#c0392b" };
+    }
+
+    function updateHexDisplay() {
+      const colorIds = ["pageBg", "titleColor", "subtitleColor", "dividerColor", "inputBg", "inputBorderColor", "labelColor", "btnColor1", "btnColor2"];
+      colorIds.forEach(id => {
+        const el = document.getElementById(id + "Hex");
+        if (el) el.textContent = v(id).toUpperCase();
+      });
+    }
+
+    function update() {
+      updateHexDisplay();
+
+      document.getElementById("pageBgAlphaVal").textContent = v("pageBgAlpha") + "%";
+      document.getElementById("fontDesktopVal").textContent = v("fontDesktop") + "px";
+      document.getElementById("fontMobileVal").textContent = v("fontMobile") + "px";
+      document.getElementById("formWidthVal").textContent = v("formWidth");
+      document.getElementById("dividerOpacityVal").textContent = v("dividerOpacity") + "%";
+      document.getElementById("inputBgAlphaVal").textContent = v("inputBgAlpha") + "%";
+      document.getElementById("inputBorderAlphaVal").textContent = v("inputBorderAlpha") + "%";
+      document.getElementById("inputBorderWVal").textContent = v("inputBorderW") + "px";
+      document.getElementById("inputRadiusVal").textContent = v("inputRadius") + "px";
+      document.getElementById("btnFontSizeVal").textContent = v("btnFontSize") + "px";
+      document.getElementById("btnAngleVal").textContent = v("btnAngle") + "°";
+
+      root.setProperty("--page-bg", hexAlpha(v("pageBg"), v("pageBgAlpha")));
+      root.setProperty("--font-desktop", v("fontDesktop") + "px");
+      root.setProperty("--font-mobile", v("fontMobile") + "px");
+      root.setProperty("--title-color", v("titleColor"));
+      root.setProperty("--subtitle-color", v("subtitleColor"));
+      root.setProperty("--form-max-width", v("formWidth") + "px");
+      root.setProperty("--divider-color", hexAlpha(v("dividerColor"), v("dividerOpacity")));
+
+      root.setProperty("--input-bg", hexAlpha(v("inputBg"), v("inputBgAlpha")));
+      root.setProperty("--input-border-color", hexAlpha(v("inputBorderColor"), v("inputBorderAlpha")));
+      root.setProperty("--input-border-w", v("inputBorderW") + "px");
+      root.setProperty("--input-radius", (borderStyle === "full" ? v("inputRadius") : 0) + "px");
+      root.setProperty("--label-color", v("labelColor"));
+
+      const cc = contentColors(v("contentMode"));
+      root.setProperty("--content-color", cc.content);
+      root.setProperty("--asterisk-color", cc.asterisk);
+      root.setProperty("--placeholder-color", cc.placeholder);
+
+      const pc = policyColors(v("policyMode"));
+      root.setProperty("--policy-text-color", pc.text);
+      root.setProperty("--policy-link-color", pc.link);
+
+      root.setProperty("--btn-font-size", v("btnFontSize") + "px");
+      root.setProperty("--btn-bg", btnColorMode === "solid" ? v("btnColor1") : `linear-gradient(${v("btnAngle")}deg, ${v("btnColor1")}, ${v("btnColor2")})`);
+
+      document.querySelectorAll(".p-row, .p-textarea").forEach(el => {
+        el.classList.remove("style-full", "style-bottom");
+        el.classList.add(borderStyle === "full" ? "style-full" : "style-bottom");
+      });
+
+      document.getElementById("radiusRow").style.display = borderStyle === "full" ? "flex" : "none";
+      document.getElementById("btnColor2Row").style.display = btnColorMode === "gradient" ? "flex" : "none";
+      document.getElementById("btnAngleRow").style.display = btnColorMode === "gradient" ? "flex" : "none";
+
+      document.getElementById("scssOut").textContent = buildScss();
+    }
+
+    function buildScss() {
+      const borderHex8 = hexAlpha(v("inputBorderColor"), v("inputBorderAlpha"));
+      const inputBorderRule = borderStyle === "full"
+        ? `border: ${v("inputBorderW")}px solid ${borderHex8};\n      border-radius: ${v("inputRadius")}px;`
+        : `border: 0;\n      border-bottom: ${v("inputBorderW")}px solid ${borderHex8};\n      border-radius: 0;`;
+
+      const btnBg = btnColorMode === "solid"
+        ? `background-color: ${v("btnColor1")};`
+        : `background: linear-gradient(${v("btnAngle")}deg, ${v("btnColor1")}, ${v("btnColor2")});`;
+
+      const dividerHex8 = hexAlpha(v("dividerColor"), v("dividerOpacity"));
+      const inputBgHex8 = hexAlpha(v("inputBg"), v("inputBgAlpha"));
+      const pageBgHex8 = hexAlpha(v("pageBg"), v("pageBgAlpha"));
+      const cc = contentColors(v("contentMode"));
+      const pc = policyColors(v("policyMode"));
+
+      return `@import "@/assets/style/function.scss";
+
+.order {
+  width: 100%;
+  padding-top: 3.5em;
+  font-size: ${v("fontDesktop")}px;
+  background-color: ${pageBgHex8};
+
+  .order-section {
+    position: relative;
+    overflow: hidden;
+    min-height: size(500);
+  }
+
+  .order-title {
+    font-size: 2.4em;
+    font-weight: 700;
+    color: ${v("titleColor")};
+    padding-top: .4em;
+  }
+
+  .order-subTitle {
+    font-size: 1.05em;
+    padding-top: .5em;
+    letter-spacing: .05em;
+    color: ${v("subtitleColor")};
+  }
+
+  .form {
+    width: min(${v("formWidth")}px, 95%);
+    gap: 4em;
+    margin-top: 2.5em;
+    margin-bottom: 2.5em;
+    z-index: 50;
+    align-items: stretch;
+
+    .left {
+      position: relative;
+      flex: 1;
+      gap: 1.25em;
+      align-items: flex-start;
+    }
+
+    .right {
+      flex: 1;
+      height: auto;
+      display: flex;
+
+      textarea { flex: 1; height: 100%; }
+    }
+
+    &::after {
+      content: "";
+      width: 1px;
+      height: 100%;
+      background-color: ${dividerHex8};
+      position: absolute;
+      top: 0; left: 0; right: 0; margin: auto;
+    }
+
+    .row {
+      background: ${inputBgHex8};
+      color: ${cc.content};
+      display: flex;
+      width: 100%;
+      align-items: center;
+      ${inputBorderRule}
+
+      > span {
+        min-width: 5.5em;
+        text-align: left;
+        padding-left: 1em;
+        color: ${v("labelColor")};
+
+        > i {
+          color: ${cc.asterisk};
+        }
+      }
+
+      input,
+      select {
+        background: transparent;
+        flex: 1;
+        color: inherit;
+      }
+
+      input::placeholder {
+        color: ${cc.placeholder};
+      }
+    }
+
+    .name {
+      width: 100%;
+      display: flex;
+      gap: .7em;
+      .row { flex: 1; }
+    }
+
+    .gender {
+      display: flex;
+      right: 0;
+      flex-direction: column;
+      justify-content: center;
+      margin-left: .7em;
+      color: ${v("labelColor")};
+
+      label:first-child {
+        margin-bottom: .3em;
+      }
+    }
+  }
+
+  .control {
+    font-size: 16px;
+    position: relative;
+    z-index: 10;
+
+    p {
+      color: ${pc.text};
+    }
+
+    a {
+      color: ${pc.link};
+      cursor: pointer;
+    }
+  }
+
+  .send {
+    font-size: ${(v("btnFontSize") / 16).toFixed(3)}rem;
+    ${btnBg}
+    border: 0;
+    padding: .7em 0;
+    letter-spacing: 0.5em;
+    line-height: 1.5;
+    text-indent: 0.5em;
+    border-radius: 2em;
+    text-align: center;
+    width: 16em;
+    z-index: 10;
+    color: #fff;
+    position: relative;
+    transition: transform .3s;
+    margin-bottom: 2em;
+    font-weight: 700;
+    &:hover { transform: scale(1.03); }
+  }
+}
+`;
+    }
+
+    // Generate dynamic SVG vector graphic
+    function generateSVG() {
+      const bgSplit = splitHexAlpha(hexAlpha(v("pageBg"), v("pageBgAlpha")));
+      const titleColor = v("titleColor");
+      const subtitleColor = v("subtitleColor");
+      const inputBgSplit = splitHexAlpha(hexAlpha(v("inputBg"), v("inputBgAlpha")));
+      const inputBorderSplit = splitHexAlpha(hexAlpha(v("inputBorderColor"), v("inputBorderAlpha")));
+      const inputBorderW = v("inputBorderW");
+      const inputRadius = borderStyle === "full" ? v("inputRadius") : 0;
+      const labelColor = v("labelColor");
+      const cc = contentColors(v("contentMode"));
+      const placeholderSplit = splitHexAlpha(cc.placeholder);
+      const pc = policyColors(v("policyMode"));
+      const dividerSplit = splitHexAlpha(hexAlpha(v("dividerColor"), v("dividerOpacity")));
+      const btnBg = btnColorMode === "solid" ? v("btnColor1") : v("btnColor1");
+
+      return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080">
+  <defs>
+    <style>
+      .bg { fill: ${bgSplit.hex}; fill-opacity: ${bgSplit.opacity}; }
+      .title { font-size: 40px; font-weight: bold; fill: ${titleColor}; font-family:"Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;}
+      .subtitle { font-size: 18px; fill: ${subtitleColor}; font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;  }
+      .input-box { fill: ${inputBgSplit.hex}; fill-opacity: ${inputBgSplit.opacity}; stroke: ${inputBorderSplit.hex}; stroke-opacity: ${inputBorderSplit.opacity}; stroke-width: ${inputBorderW}px; rx: ${inputRadius}px; }
+      .label-text { font-size: 16px; fill: ${labelColor}; font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif; font-weight: 500; }
+      .placeholder-text { font-size: 15px; fill: ${placeholderSplit.hex}; fill-opacity: ${placeholderSplit.opacity}; font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif; }
+      .asterisk { fill: ${cc.asterisk}; font-weight: bold; }
+      .divider { stroke: ${dividerSplit.hex}; stroke-opacity: ${dividerSplit.opacity}; stroke-width: 1px; }
+      .policy-text { font-size: 14px; fill: ${pc.text}; font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif; }
+      .policy-link { fill: ${pc.link}; text-decoration: underline; }
+      .recaptcha-bg { fill: #f9f9f9; stroke: #d3d3d3; stroke-width: 1px; rx: 3px; }
+      .recaptcha-text { font-size: 14px; fill: #999999; font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif; }
+      .btn-bg { fill: ${btnBg}; rx: 30px; }
+      .btn-text { font-size: 20px; font-weight: bold; fill: #ffffff; font-family: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif; letter-spacing: 4px; }
+    </style>
+  </defs>
+
+  <rect fill="#666" width="100%" height="100%" />
+  <!-- Background -->
+
+  <!-- Main Content -->
+  <g>
+  <rect class="bg" x="19" y="39" width="1449" height="724" />
+    <!-- Titles -->
+    <text x="662" y="120" class="title">預約賞屋</text>
+    <text x="601" y="165" class="subtitle">請留下資料，將有專人將盡快與您聯繫</text>
+
+    <!-- Center Divider -->
+    <line x1="747" y1="193" x2="747" y2="464" class="divider" />
+
+    <!-- Left Form Fields -->
+    <!-- Name Input -->
+    <rect x="231" y="198" width="420" height="52" class="input-box" />
+    <text x="248" y="230" class="label-text">姓名<tspan class="asterisk">*</tspan></text>
+    <text x="318" y="230" class="placeholder-text">請填寫姓名</text>
+
+    <!-- Gender Radios -->
+    <g transform="translate(661, 200)">
+      <circle cx="10" cy="12" r="6" fill="#3b82f6" />
+      <circle cx="10" cy="12" r="3" fill="#ffffff" />
+      <text x="24" y="17" class="label-text">先生</text>
+      <circle cx="10" cy="36" r="6" fill="none" stroke="#ccc" stroke-width="2" />
+      <text x="24" y="41" class="label-text">女士</text>
+    </g>
+
+    <!-- Phone Input -->
+    <rect x="231" y="270" width="490" height="52" class="input-box" />
+    <text x="248" y="303" class="label-text">手機<tspan class="asterisk">*</tspan></text>
+    <text x="318" y="303" class="placeholder-text">請填寫電話</text>
+
+    <!-- City Select -->
+    <rect x="231" y="340" width="490" height="52" class="input-box" />
+    <text x="248" y="372" class="label-text">居住縣市</text>
+    <text x="318" y="372" class="placeholder-text">請選擇縣市</text>
+    <path d="M690,363l6,8,6-8h-12Z" fill="#666" />
+
+    <!-- District Select -->
+    <rect x="231" y="410" width="490" height="52" class="input-box" />
+    <text x="248" y="442" class="label-text">居住地區</text>
+    <text x="318" y="442" class="placeholder-text">請選擇地區</text>
+    <path d="M690,433l6,8,6-8h-12Z" fill="#666" />
+
+    <!-- Right Textarea -->
+    <rect x="773" y="198" width="490" height="264" class="input-box" />
+    <text x="793" y="233" class="placeholder-text">(非必填) 請輸入您的留言</text>
+
+    <!-- Policy Statement -->
+    <g>
+      <rect x="597.3" y="503" width="16" height="16" fill="#ffffff" stroke="#999" stroke-width="1.5" rx="2" />
+      <text x="624" y="517" class="policy-text">本人知悉並同意 <tspan class="policy-link">「個資告知事項聲明」</tspan> 內容</text>
+    </g>
+
+    <!-- reCAPTCHA -->
+    <g>
+      <rect class="recaptcha-bg" x="577" y="543" width="340" height="78" />
+      <text x="678" y="586" class="recaptcha-text">reCAPTCHA 340×78</text>
+    </g>
+
+    <!-- Submit Button -->
+    <g>
+      <rect class="btn-bg" x="617" y="653" width="260" height="56" />
+      <text x="687" y="687" class="btn-text">送 出 表 單</text>
+    </g>
+  </g> 
+  
+  <g transform="translate(930, 0)">
+  <rect class="bg" x="559" y="39" width="375" height="816" />
+    <text x="663" y="120" class="title">預約賞屋</text>
+    <text x="602" y="165" class="subtitle">請留下資料，將有專人將盡快與您聯繫</text>
+  
+
+  <g transform="translate(346, 0)">
+    <!-- Name Input -->
+    <rect x="231" y="198" width="270" height="52" class="input-box" />
+    <text x="248" y="230" class="label-text">姓名<tspan class="asterisk">*</tspan></text>
+    <text x="318" y="230" class="placeholder-text">請填寫姓名</text>
+
+    <!-- Gender Radios -->
+    <g transform="translate(511, 200)">
+      <circle cx="10" cy="12" r="6" fill="#3b82f6" />
+      <circle cx="10" cy="12" r="3" fill="#ffffff" />
+      <text x="24" y="17" class="label-text">先生</text>
+      <circle cx="10" cy="36" r="6" fill="none" stroke="#ccc" stroke-width="2" />
+      <text x="24" y="41" class="label-text">女士</text>
+    </g>
+
+    <!-- Phone Input -->
+    <rect x="231" y="270" width="340" height="52" class="input-box" />
+    <text x="248" y="303" class="label-text">手機<tspan class="asterisk">*</tspan></text>
+    <text x="318" y="303" class="placeholder-text">請填寫電話</text>
+
+    <!-- City Select -->
+    <rect x="231" y="340" width="340" height="52" class="input-box" />
+    <text x="248" y="372" class="label-text">居住縣市</text>
+    <text x="318" y="372" class="placeholder-text">請選擇縣市</text>
+    <path d="M540,363l6,8,6-8h-12Z" fill="#666" />
+
+    <!-- District Select -->
+    <rect x="231" y="410" width="340" height="52" class="input-box" />
+    <text x="248" y="442" class="label-text">居住地區</text>
+    <text x="318" y="442" class="placeholder-text">請選擇地區</text>
+    <path d="M540,433l6,8,6-8h-12Z" fill="#666" />
+
+    </g>
+  <g transform="translate(0, 112)">
+  <g transform="translate(-196, 0)">
+    <!-- Right Textarea -->
+    <rect x="773" y="368" width="340" height="103" class="input-box" />
+    <text x="793" y="403" class="placeholder-text">(非必填) 請輸入您的留言</text>
+
+    </g>
+    <!-- Policy Statement -->
+    <g>
+      <rect x="597.3" y="503" width="16" height="16" fill="#ffffff" stroke="#999" stroke-width="1.5" rx="2" />
+      <text x="624" y="517" class="policy-text">本人知悉並同意 <tspan class="policy-link">「個資告知事項聲明」</tspan> 內容</text>
+    </g>
+
+    <!-- reCAPTCHA -->
+    <g>
+      <rect class="recaptcha-bg" x="577" y="543" width="340" height="78" />
+      <text x="678" y="586" class="recaptcha-text">reCAPTCHA 340×78</text>
+    </g>
+
+    <!-- Submit Button -->
+    <g>
+      <rect class="btn-bg" x="617" y="653" width="260" height="56" />
+      <text x="687" y="687" class="btn-text">送 出 表 單</text>
+    </g>
+  </g>
+  </g>
+</svg>`;
+    }
+
+    // Bind events to control parameters
+    ["pageBg", "pageBgAlpha", "fontDesktop", "fontMobile", "titleColor", "subtitleColor", "formWidth", "dividerColor", "dividerOpacity",
+      "inputBg", "inputBgAlpha", "inputBorderColor", "inputBorderAlpha", "inputBorderW", "inputRadius", "labelColor", "contentMode",
+      "policyMode", "btnFontSize", "btnColor1", "btnColor2", "btnAngle"
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("input", update);
+    });
+
+    function setSeg(activeBtn, inactiveBtn) { activeBtn.classList.add("active"); inactiveBtn.classList.remove("active"); }
+
+    // Border Mode Listeners
+    const btnBorderFull = document.getElementById("btnBorderFull");
+    const btnBorderBottom = document.getElementById("btnBorderBottom");
+    btnBorderFull.addEventListener("click", () => { borderStyle = "full"; setSeg(btnBorderFull, btnBorderBottom); update(); });
+    btnBorderBottom.addEventListener("click", () => { borderStyle = "bottom"; setSeg(btnBorderBottom, btnBorderFull); update(); });
+
+    // Button Color Mode Listeners
+    const btnColorSolid = document.getElementById("btnColorSolid");
+    const btnColorGradient = document.getElementById("btnColorGradient");
+    btnColorSolid.addEventListener("click", () => { btnColorMode = "solid"; setSeg(btnColorSolid, btnColorGradient); update(); });
+    btnColorGradient.addEventListener("click", () => { btnColorMode = "gradient"; setSeg(btnColorGradient, btnColorSolid); update(); });
+
+    // Viewport Mode Listeners
+    const btnModeDesktop = document.getElementById("btnModeDesktop");
+    const btnModeMobile = document.getElementById("btnModeMobile");
+    const previewShell = document.getElementById("previewShell");
+    btnModeDesktop.addEventListener("click", () => { previewShell.classList.remove("sim-mobile"); setSeg(btnModeDesktop, btnModeMobile); });
+    btnModeMobile.addEventListener("click", () => { previewShell.classList.add("sim-mobile"); setSeg(btnModeMobile, btnModeDesktop); });
+
+    // Preset Switcher Logic
+    function applyPreset(theme) {
+      if (theme === "light") {
+        setv("pageBg", "#E9E6E2"); setv("pageBgAlpha", 100);
+        setv("fontDesktop", 15); setv("fontMobile", 15);
+        setv("titleColor", "#918177"); setv("subtitleColor", "#000000");
+        setv("formWidth", 1000);
+        setv("dividerColor", "#000000"); setv("dividerOpacity", 15);
+        setv("inputBg", "#FFFFFF"); setv("inputBgAlpha", 100);
+        borderStyle = "full";
+        setv("inputBorderColor", "#FFFFFF"); setv("inputBorderAlpha", 100); setv("inputBorderW", 1); setv("inputRadius", 10);
+        setv("labelColor", "#000000");
+        setv("contentMode", "black");
+        setv("policyMode", "light");
+        setv("btnFontSize", 18);
+        btnColorMode = "solid";
+        setv("btnColor1", "#9F8A7A");
+        setSeg(btnBorderFull, btnBorderBottom);
+        setSeg(btnColorSolid, btnColorGradient);
+      } else {
+        setv("pageBg", "#00476B"); setv("pageBgAlpha", 100);
+        setv("fontDesktop", 15); setv("fontMobile", 15);
+        setv("titleColor", "#3FA9DE"); setv("subtitleColor", "#FFFFFF");
+        setv("formWidth", 1000);
+        setv("dividerColor", "#FFFFFF"); setv("dividerOpacity", 25);
+        setv("inputBg", "#000000"); setv("inputBgAlpha", 15);
+        borderStyle = "bottom";
+        setv("inputBorderColor", "#808FA8"); setv("inputBorderAlpha", 100); setv("inputBorderW", 1); setv("inputRadius", 0);
+        setv("labelColor", "#FFFFFF");
+        setv("contentMode", "white");
+        setv("policyMode", "white");
+        setv("btnFontSize", 18);
+        btnColorMode = "gradient";
+        setv("btnColor1", "#8ACCFF"); setv("btnColor2", "#7900DB"); setv("btnAngle", 135);
+        setSeg(btnBorderBottom, btnBorderFull);
+        setSeg(btnColorGradient, btnColorSolid);
+      }
+      update();
+    }
+    document.getElementById("presetLight").addEventListener("click", () => applyPreset("light"));
+    document.getElementById("presetDark").addEventListener("click", () => applyPreset("dark"));
+
+    // Initialize values
+    update();
+
+    // Copy helper function
+    function doCopy(btn) {
+      const text = document.getElementById("scssOut").textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const original = btn.textContent;
+        btn.textContent = "已複製 ✓";
+        btn.classList.add("done");
+        setTimeout(() => { btn.textContent = original; btn.classList.remove("done"); }, 1400);
+      });
+    }
+    document.getElementById("copyBtnTop").addEventListener("click", (e) => doCopy(e.target));
+    document.getElementById("copyBtnBottom").addEventListener("click", (e) => doCopy(e.target));
+
+    // Download SVG functionality
+    document.getElementById("downloadSvgBtn").addEventListener("click", () => {
+      const svgContent = generateSVG();
+      const blob = new Blob([svgContent], { type: "image/svg+xml;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "order-form-preview.svg";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    });
+  </script>
+
+</body>
+
+</html>
