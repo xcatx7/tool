@@ -839,7 +839,7 @@
     function contentColors(mode) {
       return mode === "white"
         ? { content: "#ffffff", asterisk: "#ffff00", placeholder: "#FFFFFFB3" }
-        : { content: "#000000", asterisk: "#d9534f", placeholder: "#999999" };
+        : { content: "#000000", asterisk: "#cc0000", placeholder: "#999999" };
     }
     function policyColors(mode) {
       return mode === "white"
@@ -927,24 +927,14 @@
       return `@import "@/assets/style/function.scss";
 
 
-.area-drop-enter-active {
-  transition: all 0.35s ease;
-  overflow: hidden;
-}
-.area-drop-enter-from {
-  max-height: 0;
-  opacity: 0;
-}
-.area-drop-enter-to {
-  max-height: 4em;
-  opacity: 1;
-}
-
 .order {
   width: 100%;
   padding-top: 3.5em;
   font-size: ${v("fontDesktop")}px;
   background-color: ${pageBgHex8};
+  @media screen and (max-width:768px) {
+    font-size: ${v("fontMobile")}px;
+  }
 
   .order-section {
     position: relative;
@@ -1012,7 +1002,7 @@
         padding-left: 1em;
         color: ${v("labelColor")};
 
-        > i {
+        > span {
           color: ${cc.asterisk};
         }
       }
@@ -1026,6 +1016,19 @@
 
       input::placeholder {
         color: ${cc.placeholder};
+      }
+      option {
+        color: #666;
+      }
+
+      select {
+        background: url("//h35.banner.tw/img//select.svg") no-repeat calc(100% - .5em) 100%;
+        background-size: auto 200%;
+        transition: background .3s;
+
+        &:focus {
+          background-position: calc(100% - .5em) 0%;
+        }
       }
     }
 
@@ -1047,6 +1050,9 @@
       label:first-child {
         margin-bottom: .3em;
       }
+      input {
+        margin-right: .3em;
+      }
     }
   }
 
@@ -1058,12 +1064,13 @@
     p {
       color: ${pc.text};
     }
-    .checkbox{
-    background-color: #fff;
-    }
-    .cursor-pointer {
+    label[for="policy-modal"] {
       color: ${pc.link};
       cursor: pointer;
+    }
+    input[type="checkbox"] {
+      border: 1px solid #666;
+      background-color: #fff;
     }
   }
 
@@ -1086,6 +1093,7 @@
     font-weight: 700;
     &:hover { transform: scale(.9); }
   }
+  .send-load { color:${pc.text}; }
 }
 @media screen and (max-width:768px) {
   .order {
@@ -1094,29 +1102,13 @@
   .order-section {
     min-height: sizem(800);
     position: relative;
-  background: linear-gradient(0deg, #006a00 20%,#006a0099 80%, #006a0000);
 
   }
-
-
-    .cus-divider {
-      margin: 0 auto;
-      width: sizem(117);
-      height: sizem(2);
-      margin-bottom: sizem(25);
-      background-color: #055F76;
-    }
-
-    .order-title {
-      font-size:29px;
-      width: sizem(310);
-      min-width: 0;
-    }
+    .order-title,
     .order-subTitle{
-      font-size:14px;
-      padding-top:0;
+      width: sizem(310);
+      margin: 0 auto;
     }
-
 
     .form {
       width: sizem(310);
@@ -1151,6 +1143,19 @@
       font-size: 14px;
     }
   }
+}
+
+.area-drop-enter-active {
+  transition: all 0.35s ease;
+  overflow: hidden;
+}
+.area-drop-enter-from {
+  max-height: 0;
+  opacity: 0;
+}
+.area-drop-enter-to {
+  max-height: 4em;
+  opacity: 1;
 }
 `;
     }
