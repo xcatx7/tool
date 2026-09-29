@@ -7,7 +7,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif}
 body{display:flex;height:100vh;background:#141414;color:#eee;overflow:hidden}
-.panel{width:360px;padding:22px;background:#1f1f1f;border-right:1px solid #333;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.panel{width:360px; min-width: 360px;padding:22px;background:#1f1f1f;border-right:1px solid #333;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
 h2{font-size:18px}
 .g{display:flex;flex-direction:column;gap:6px}
 .g label{font-size:13px;color:#aaa;display:flex;justify-content:space-between}
@@ -21,6 +21,8 @@ button{padding:11px;border:0;border-radius:4px;font-weight:700;cursor:pointer;co
 button.dl{background:#28a745;color:#fff}
 button.sub{background:#333;color:#ddd}
 .stage{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;background:#0c0c0c}
+
+    @media (max-width: 768px) { .stage { min-width: 500px; } }
 #wrap{position:relative;width:100%;max-width:1280px;aspect-ratio:16/9;background:#000;box-shadow:0 10px 30px #000a;overflow:hidden}
 #wrap svg{width:100%;height:100%;display:block}
 /* HTML 方框遮罩（可拖曳、可縮放） */
