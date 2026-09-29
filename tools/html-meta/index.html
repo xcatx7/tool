@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>網站 Meta 標籤生成與手機版預覽工具 (SEO 最佳化版)</title>
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    html { scroll-behavior: smooth; } /* 平滑滾動 */
+    body { background-color: #f4f6f9; color: #333; margin: 0; padding: 20px; }    
+    @media (max-width: 768px) { body { padding: 0; } }
+    .container { max-width: 1050px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
+    
+    .panel { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    h2 { margin-top: 0; font-size: 1.2rem; color: #1a73e8; border-bottom: 2px solid #e8eaed; padding-bottom: 8px; }
+    
+    .form-group { margin-bottom: 15px; }
+    label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9rem; }
+    .hint { font-size: 0.8rem; color: #666; margin-bottom: 5px; }
+    input, textarea { width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.95rem; }
+    textarea { resize: vertical; height: 85px; }
+    
+    .counter { font-size: 0.8rem; text-align: right; color: #666; margin-top: 4px; }
+    .warning { color: #d93025; font-weight: bold; }
+    .success { color: #1e8e3e; font-weight: bold; }
+
+    /* 手機模擬器樣式 */
+    .phone-mockup {
+      width: 360px;
+      margin: 0 auto;
+      background: #fff;
+      border: 12px solid #222;
+      border-radius: 36px;
+      padding: 15px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+    @media (max-width: 380px) {
+      .phone-mockup { width: 100%; }
+    }
+    .phone-header { height: 20px; background: #e0e0e0; border-radius: 10px; margin-bottom: 15px; width: 60%; margin-left: auto; margin-right: auto; }
+    
+    /* Google 搜尋結果樣式 (Mobile) */
+    .google-card { font-family: Roboto, arial, sans-serif; text-align: left; background: #fff; }
+    .google-site-name { font-size: 12px; color: #202124; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; }
+    .google-site-icon { width: 16px; height: 16px; background: #e8eaed; border-radius: 50%; display: inline-block; }
+    .google-url { font-size: 12px; color: #4d5156; margin-bottom: 4px; word-break: break-all; }
+    .google-title {
+      color: #1a0dab;
+      font-size: 16px;
+      line-height: 1.3;
+      margin-bottom: 4px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2; /* 手機版最長顯示約兩行 */
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      word-break: break-word;
+    }
+    .google-desc {
+      color: #4d5156;
+      font-size: 13px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 3; /* 手機版最長顯示約三行 */
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      word-break: break-word;
+    }
+
+    .output-box { margin-top: 15px; background: #272822; color: #f8f8f2; padding: 12px; border-radius: 4px; font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; word-break: break-all; text-align: left; }
+    
+    .example-box { margin-top: 20px; padding: 12px; background: #f8f9fa; border: 1px dashed #adc6ff; border-radius: 6px; text-align: left; font-size: 0.85rem; color: #555; }
+    .example-box h3 { margin: 0 0 8px 0; font-size: 0.95rem; color: #1a73e8; }
+    
+    .rule-box { margin-top: 15px; padding: 10px; background: #fffbe6; border: 1px solid #ffe58f; border-radius: 6px; text-align: left; font-size: 0.8rem; color: #8c6b00; }
+    .rule-box ul { margin: 4px 0 0 18px; padding: 0; }
+
+    button.download-btn { background: #c00; color: white; border: none; transition: background .2s; padding: 20px 12px; border-radius: 4px; cursor: pointer; margin-top: 12px; width: 100%; font-weight: bold; font-size: 0.95rem; }
+    
+    @media (max-width: 768px) { button.download-btn {width: 60%;margin: 12px auto 0 0;display: block;} }
+    button.download-btn:hover { background: #1557b0; }
+
+    /* 手機版快速切換浮動按鈕 */
+    .float-nav-btn {
+      display: none; /* 電腦版隱藏 */
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 999;
+      background: #1a73e8;
+      color: #fff;
+      border: none;
+      border-radius: 30px;
+      padding: 12px 20px;
+      font-size: 0.9rem;
+      font-weight: bold;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .float-nav-btn:active {
+      transform: scale(0.95);
+    }
+    @media (max-width: 768px) {
+      .float-nav-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 手機版浮動導航按鈕 -->
+<button id="floatBtn" class="float-nav-btn" onclick="toggleScroll()">看模擬 👇</button>
+
+<div class="container">
+  <!-- 左側：輸入表單 -->
+  <div class="panel" id="formPanel">
+    <h2>Meta TDK資料設定</h2>
+    
+    <!-- Title -->
+    <div class="form-group">
+      <label for="caseName">建案名稱（案名）</label>
+      <input type="text" id="caseName" value="" placeholder="請輸入案名(如無法公開，可用XX案代替)" oninput="updateMeta()">
+    </div>
+
+    <div class="form-group">
+      <label for="slogan">建案副標 / 訴求</label>
+      <input type="text" id="slogan" value="" placeholder="請輸入副標（例如：預備展開生活新居式）" oninput="updateMeta()">
+    </div>
+
+    <div class="form-group">
+      <label>完整 Title 預覽 (SEO 格式修正後)</label>
+      <input type="text" id="fullTitle" readonly style="background:#f0f0f0;">
+      <div class="counter" id="titleCount">字數：0 字</div>
+    </div>
+
+    <!-- Description -->
+    <div class="form-group">
+      <label for="descText">Description（網站描述）</label>
+      <div class="hint">💡 建議格式（案名：敘述。地址與電話可視狀況放入）</div>
+      <textarea id="descText" placeholder="請輸入網站描述..." oninput="updateMeta()"></textarea>
+      <div class="counter" id="descCount">字數：0 字</div>
+    </div>
+
+    <!-- Keywords -->
+    <div class="form-group">
+      <label>Keywords（關鍵字，限 5 個）</label>
+      <div class="hint">💡 通常是案名、地區建案、地區買房、地標建案。</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px;">
+        <input type="text" class="kw-input" placeholder="關鍵字 1" oninput="updateMeta()">
+        <input type="text" class="kw-input" placeholder="關鍵字 2" oninput="updateMeta()">
+        <input type="text" class="kw-input" placeholder="關鍵字 3" oninput="updateMeta()">
+        <input type="text" class="kw-input" placeholder="關鍵字 4" oninput="updateMeta()">
+        <input type="text" class="kw-input" placeholder="關鍵字 5" oninput="updateMeta()">
+      </div>
+      <div class="counter" id="kwCount">已輸入 0 / 5 個關鍵字</div>
+    </div>
+  </div>
+
+  <!-- 右側：手機模擬與 HTML 輸出 -->
+  <div class="panel" id="previewPanel" style="text-align: center;">
+    <h2>Google 搜尋結果模擬</h2>
+    
+    <!-- 手機模擬容器 -->
+    <div class="phone-mockup">
+      <div class="google-card">
+        <div class="google-site-name">
+          <span class="google-site-icon"></span>
+          <span>官方網站</span>
+        </div>
+        <div class="google-url">https://www.example.com.tw</div>
+        <div class="google-title" id="previewTitle">標題預覽</div>
+        <div class="google-desc" id="previewDesc">描述預覽</div>
+      </div>
+    </div>
+
+    <!-- 參考範例區塊 -->
+    <div class="example-box">
+      <h3>📌 填寫範例對照</h3>
+      <div><b>title：</b>紐約心光｜預備展開生活新居式｜官網</div>
+      <div style="margin-top: 4px;"><b>description：</b>紐約心光：大台北布魯克林，聚焦行政中心核心區，再享公園校園愜意價值，接待中心：新北市八里區商港路2號，電話：02-26101786</div>
+      <div style="margin-top: 4px;"><b>keyword：</b>紐約心光,八里建案,八里買房,台北港重劃區,新北買房</div>
+    </div>
+
+    <!-- 隱藏的程式碼輸出區（供下載功能讀取資料） -->
+    <div id="codeOutput" style="display: none;"></div>
+
+    <!-- HTML 程式碼區 -->
+    <button class="download-btn" onclick="downloadTxt()">請下載文字檔提供</button>
+  </div>
+</div>
+
+<script>
+// 特殊字元與符號校正
+function cleanAndSanitize(text) {
+  if (!text) return '';
+  return text
+    .replace(/[ \s]+/g, ' ')
+    .replace(/</g, '《')
+    .replace(/>/g, '》')
+    .replace(/"/g, '”')
+    .replace(/'/g, '’')
+    .replace(/\|+/g, '｜');
+}
+
+function updateMeta() {
+  // --- A. 處理 Title ---
+  let rawCaseName = cleanAndSanitize(document.getElementById('caseName').value.trim());
+  const caseName = rawCaseName || 'xxx案';
+  const slogan = cleanAndSanitize(document.getElementById('slogan').value.trim());
+  
+  let fullTitle = '';
+  if (slogan) {
+    fullTitle = `${caseName}｜${slogan}｜官網`;
+  } else {
+    fullTitle = `${caseName}｜官網`;
+  }
+  
+  document.getElementById('fullTitle').value = fullTitle;
+  document.getElementById('previewTitle').innerText = fullTitle;
+  
+  const titleLen = fullTitle.length;
+  const titleCounter = document.getElementById('titleCount');
+  if (titleLen > 35) {
+    titleCounter.innerHTML = `字數：${titleLen} 字 <span class="warning">（長度 ${titleLen} 字過長，手機版可能被 Google 截斷或重寫）</span>`;
+  } else if (titleLen >= 15) {
+    titleCounter.innerHTML = `字數：${titleLen} 字 <span class="success">（長度適中，符合 Mobile SEO 標準）</span>`;
+  } else {
+    titleCounter.innerHTML = `字數：${titleLen} 字 （長度較短）`;
+  }
+
+  // --- B. 處理 Description ---
+  const descText = cleanAndSanitize(document.getElementById('descText').value.trim());
+  document.getElementById('previewDesc').innerText = descText || '（請輸入網站描述...）';
+  
+  const descLen = descText.length;
+  const descCounter = document.getElementById('descCount');
+  if (descLen > 80) {
+    descCounter.innerHTML = `字數：${descLen} 字 <span class="warning">（超過 80 字，手機版將會自動顯示 ...）</span>`;
+  } else if (descLen >= 50) {
+    descCounter.innerHTML = `字數：${descLen} 字 <span class="success">（長度適中）</span>`;
+  } else {
+    descCounter.innerHTML = `字數：${descLen} 字`;
+  }
+
+  // --- C. 處理 Keywords ---
+  const kwInputs = document.querySelectorAll('.kw-input');
+  const kwArray = [];
+  kwInputs.forEach(input => {
+    const val = cleanAndSanitize(input.value.trim());
+    if (val !== '' && !kwArray.includes(val)) {
+      kwArray.push(val);
+    }
+  });
+  const keywordsStr = kwArray.join(',');
+  document.getElementById('kwCount').innerText = `已有效輸入 ${kwArray.length} / 5 個關鍵字`;
+
+  // --- D. 生成 PHP Array 格式代碼 ---
+  const safeTitle = fullTitle.replace(/'/g, "\\'");
+  const safeDesc = descText.replace(/'/g, "\\'");
+  const safeKeywords = keywordsStr.replace(/'/g, "\\'");
+
+  const code = 
+`'title' => '${safeTitle}',
+'description' => '${safeDesc}',
+'keyword' => '${safeKeywords}'`;
+
+  document.getElementById('codeOutput').innerText = code;
+}
+
+// 下載 txt 檔案功能
+function downloadTxt() {
+  const code = document.getElementById('codeOutput').innerText;
+  
+  let rawCaseName = document.getElementById('caseName').value.trim();
+  let safeFileNameCase = (rawCaseName || 'xxx案').replace(/[\\/:*?"<>|]/g, '');
+  
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const dateStr = `${year}${month}${day}`;
+
+  const fileName = `tdk-${safeFileNameCase}${dateStr}.txt`;
+
+  const blob = new Blob(['\uFEFF' + code], { type: 'text/plain;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = fileName;
+  link.click();
+  
+  URL.revokeObjectURL(link.href);
+}
+
+// 手機版浮動按鈕滾動邏輯
+let isAtPreview = false;
+
+function toggleScroll() {
+  const previewPanel = document.getElementById('previewPanel');
+  const formPanel = document.getElementById('formPanel');
+  
+  if (!isAtPreview) {
+    previewPanel.scrollIntoView({ behavior: 'smooth' });
+  } else {
+    formPanel.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+// 監聽滾動事件，自動切換按鈕文字與狀態
+window.addEventListener('scroll', function() {
+  const previewPanel = document.getElementById('previewPanel');
+  const btn = document.getElementById('floatBtn');
+  const rect = previewPanel.getBoundingClientRect();
+  
+  if (rect.top <= window.innerHeight / 2) {
+    isAtPreview = true;
+    btn.innerText = '繼續填寫 👆';
+  } else {
+    isAtPreview = false;
+    btn.innerText = '看模擬 👇';
+  }
+});
+
+// 初始執行一次
+updateMeta();
+</script>
+
+</body>
+</html>
