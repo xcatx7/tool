@@ -1,5 +1,10 @@
 [
   {
+    "name": "svg-玻璃濾鏡",
+    "date": "2026-09-29",
+    "path": "tools/svg-glass/index.html"
+  },
+  {
     "name": "html-Meta TDK設定",
     "date": "2026-09-29",
     "path": "tools/html-meta/index.html"
