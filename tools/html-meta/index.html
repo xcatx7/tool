@@ -365,16 +365,13 @@ function checkEmailAddBtnState() {
   addBtn.style.display = (count >= 5) ? 'none' : 'inline-block';
 }
 
-// GMAP 位置一鍵開圖驗證功能
+// GMAP 位置一鍵開圖驗證功能 (支援 LINE 跳轉防誤關機制)
 function verifyGmapLocation() {
   let gmapInput = document.getElementById('gmapUrl').value.trim();
   let addressInput = document.getElementById('address').value.trim();
   let targetQuery = '';
 
-  if (/^https?:\/\//i.test(gmapInput)) {
-    window.open(gmapInput, '_blank');
-    return;
-  } else if (gmapInput !== '' && gmapInput !== '同接待中心地址') {
+  if (gmapInput !== '' && gmapInput !== '同接待中心地址') {
     targetQuery = gmapInput;
   } else if (addressInput !== '' && addressInput !== '不公開') {
     targetQuery = addressInput;
@@ -383,8 +380,22 @@ function verifyGmapLocation() {
     return;
   }
 
-  const googleMapsSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(targetQuery)}`;
-  window.open(googleMapsSearchUrl, '_blank');
+  // 1. 如果輸入的是標準網址，直接開啟
+  if (/^https?:\/\//i.test(targetQuery)) {
+    window.open(targetQuery, '_blank');
+    return;
+  }
+
+  // 2. 判斷是否在 LINE 環境下
+  const isLine = /Line/i.test(navigator.userAgent);
+  
+  if (isLine) {
+    // 使用 Google Maps 的 intent / app deep link，喚起原生地圖 App
+    window.location.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(targetQuery)}`;
+  } else {
+    // 一般瀏覽器直接開新分頁
+    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(targetQuery)}`, '_blank');
+  }
 }
 
 function updateMeta() {
