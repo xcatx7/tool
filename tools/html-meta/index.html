@@ -176,7 +176,7 @@
       .float-nav-btn { display: flex; align-items: center; gap: 6px; }
     }
 
-    /* Modal 地圖彈窗樣式 (方案二) */
+    /* Modal 地圖彈窗樣式 */
     .map-modal-overlay {
       display: none;
       position: fixed;
@@ -193,7 +193,7 @@
     .map-modal-card {
       background: #fff;
       width: 100%;
-      max-width: 600px;
+      max-width: 650px;
       height: 80vh;
       max-height: 550px;
       border-radius: 12px;
@@ -208,14 +208,33 @@
       to { opacity: 1; transform: scale(1); }
     }
     .map-modal-header {
-      padding: 12px 16px;
+      padding: 10px 16px;
       background: #1a73e8;
       color: #fff;
       font-weight: bold;
-      font-size: 1rem;
+      font-size: 0.95rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
+    }
+    .map-modal-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .btn-open-external {
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.5);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .btn-open-external:hover {
+      background: rgba(255,255,255,0.35);
     }
     .map-modal-close-btn {
       background: none;
@@ -243,12 +262,15 @@
 <!-- 手機版浮動導航按鈕 -->
 <button id="floatBtn" class="float-nav-btn" onclick="toggleScroll()">看模擬 👇</button>
 
-<!-- 地圖彈窗 Modal (方案二：不離開頁面) -->
+<!-- 地圖彈窗 Modal -->
 <div class="map-modal-overlay" id="mapModalOverlay" onclick="closeMapModal(event)">
   <div class="map-modal-card" onclick="event.stopPropagation()">
     <div class="map-modal-header">
       <span>📍 Google 地圖定位驗證</span>
-      <button class="map-modal-close-btn" onclick="closeMapModal()">✕</button>
+      <div class="map-modal-actions">
+        <button class="btn-open-external" onclick="openExternalMap()">↗ 無法顯示？另開視窗</button>
+        <button class="map-modal-close-btn" onclick="closeMapModal()">✕</button>
+      </div>
     </div>
     <div class="map-modal-body">
       <iframe id="mapIframe" src="" allowfullscreen="" loading="lazy"></iframe>
@@ -399,13 +421,14 @@
 </div>
 
 <script>
-// 全域變數，直接儲存包含標準換行符號的文字
 let generatedTxtOutput = '';
+let finalCleanUrl = 'https://www.example.com.tw';
+let currentTargetQuery = ''; // 記錄目前開圖的搜尋標的
 
-// 1. 網址參數解析與自動校正防呆
-function getUrlParam(param) {
+// 1. 解析所有網址參數功能
+function getUrlParam(key) {
   const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get(param);
+  return urlParams.get(key) ? urlParams.get(key).trim() : '';
 }
 
 function cleanAndFixUrl(inputUrl) {
@@ -417,15 +440,105 @@ function cleanAndFixUrl(inputUrl) {
   return url.replace(/\/+$/, '');
 }
 
-// 初始設定網站網址
-let rawUrlParam = getUrlParam('url');
-let finalCleanUrl = cleanAndFixUrl(rawUrlParam);
-
+// 2. 網頁載入時自動讀取網址參數並填入表單
 window.addEventListener('DOMContentLoaded', () => {
+  // A. 網站網址 (url)
+  const rawUrlParam = getUrlParam('url');
+  finalCleanUrl = cleanAndFixUrl(rawUrlParam);
   document.getElementById('siteUrl').value = finalCleanUrl;
   document.getElementById('previewUrl').innerText = finalCleanUrl;
-  
-  addEmailRow();
+
+  // B. 標題 / Title
+  const paramTitle = getUrlParam('title') || getUrlParam('caseName');
+  if (paramTitle) {
+    if (paramTitle.includes('｜')) {
+      const parts = paramTitle.split('｜');
+      document.getElementById('caseName').value = parts[0] || '';
+      if (parts.length > 2) {
+        document.getElementById('slogan').value = parts.slice(1, -1).join('｜');
+      } else if (parts.length === 2 && parts[1] !== '官網') {
+        document.getElementById('slogan').value = parts[1];
+      }
+    } else {
+      document.getElementById('caseName').value = paramTitle;
+    }
+  }
+
+  // 副標/訴求 (slogan)
+  const paramSlogan = getUrlParam('slogan');
+  if (paramSlogan) {
+    document.getElementById('slogan').value = paramSlogan;
+  }
+
+  // C. 網站描述 (description 或 desc)
+  const paramDesc = getUrlParam('description') || getUrlParam('desc');
+  if (paramDesc) {
+    document.getElementById('descText').value = paramDesc;
+  }
+
+  // D. 關鍵字 (keyword 或 keywords)
+  const paramKw = getUrlParam('keyword') || getUrlParam('keywords');
+  if (paramKw) {
+    const kwList = paramKw.split(/[,，]/);
+    const kwInputs = document.querySelectorAll('.kw-input');
+    kwInputs.forEach((input, index) => {
+      if (kwList[index]) {
+        input.value = kwList[index].trim();
+      }
+    });
+  }
+
+  // E. 接待中心地址 (add 或 address)
+  const paramAdd = getUrlParam('add') || getUrlParam('address');
+  if (paramAdd) {
+    document.getElementById('address').value = paramAdd;
+  }
+
+  // F. 聯絡電話 (phone)
+  const paramPhone = getUrlParam('phone');
+  if (paramPhone) {
+    document.getElementById('phone').value = paramPhone;
+  }
+
+  // G. FB 粉絲專頁網址 (fb 或 fbUrl)
+  const paramFb = getUrlParam('fb') || getUrlParam('fbUrl');
+  if (paramFb) {
+    document.getElementById('fbUrl').value = paramFb;
+  }
+
+  // H. GMAP 網址/位置 (gmap 或 gmapUrl)
+  const paramGmap = getUrlParam('gmap') || getUrlParam('gmapUrl');
+  if (paramGmap) {
+    document.getElementById('gmapUrl').value = paramGmap;
+  }
+
+  // I. 收名單信箱 (email 或 emails)
+  const paramEmail = getUrlParam('email') || getUrlParam('emails');
+  if (paramEmail) {
+    const container = document.getElementById('emailContainer');
+    container.innerHTML = '';
+
+    const rawEmailItems = paramEmail.split(';');
+    rawEmailItems.forEach((item) => {
+      const trimmedItem = item.trim();
+      if (!trimmedItem) return;
+
+      addEmailRow(false);
+      const rows = container.querySelectorAll('.email-row');
+      const targetRow = rows[rows.length - 1];
+
+      const match = trimmedItem.match(/^(.*?)\s*<(.*?)>$/);
+      if (match) {
+        targetRow.querySelector('.email-name').value = match[1].trim();
+        targetRow.querySelector('.email-addr').value = match[2].trim();
+      } else {
+        targetRow.querySelector('.email-addr').value = trimmedItem;
+      }
+    });
+  } else {
+    addEmailRow(false);
+  }
+
   updateMeta();
 });
 
@@ -442,12 +555,12 @@ function cleanAndSanitize(text) {
 }
 
 // 動態收名單信箱 (最多 5 個)
-function addEmailRow() {
+function addEmailRow(triggerUpdate = true) {
   const container = document.getElementById('emailContainer');
   const currentRows = container.getElementsByClassName('email-row').length;
   
   if (currentRows >= 5) {
-    alert('最多只能新增 5 組信箱！');
+    if (triggerUpdate) alert('最多只能新增 5 組信箱！');
     return;
   }
   
@@ -461,7 +574,7 @@ function addEmailRow() {
   container.appendChild(div);
   
   checkEmailAddBtnState();
-  updateMeta();
+  if (triggerUpdate) updateMeta();
 }
 
 function removeEmailRow(btn) {
@@ -482,41 +595,45 @@ function checkEmailAddBtnState() {
   addBtn.style.display = (count >= 5) ? 'none' : 'inline-block';
 }
 
-// GMAP 位置一鍵開圖驗證功能 (方案二： Modal 彈窗內嵌預覽，100% 不離開頁面)
+// GMAP 位置一鍵開圖驗證功能 (Modal 彈窗版)
 function verifyGmapLocation() {
   let gmapInput = document.getElementById('gmapUrl').value.trim();
   let addressInput = document.getElementById('address').value.trim();
-  let targetQuery = '';
+  currentTargetQuery = '';
 
   if (gmapInput !== '' && gmapInput !== '同接待中心地址') {
-    targetQuery = gmapInput;
+    currentTargetQuery = gmapInput;
   } else if (addressInput !== '' && addressInput !== '不公開') {
-    targetQuery = addressInput;
+    currentTargetQuery = addressInput;
   } else {
     alert('請先輸入「接待中心地址」或「GMAP 位置」以供驗證！');
     return;
   }
 
+  // 設定小視窗 iframe 來源
   const iframe = document.getElementById('mapIframe');
+  iframe.src = `https://maps.google.com/maps?q=${encodeURIComponent(currentTargetQuery)}&output=embed`;
   
-  // 1. 如果貼的是完整的 Google Maps 網址，直接當作來源
-  if (/^https?:\/\//i.test(targetQuery)) {
-    iframe.src = targetQuery;
-  } else {
-    // 2. 如果是文字地址/名稱，透過 Google Maps Embed API 預覽
-    iframe.src = `https://maps.google.com/maps?q=${encodeURIComponent(targetQuery)}&output=embed`;
-  }
-
-  // 顯示 Modal 遮罩彈窗
+  // 顯示 Modal 地圖小視窗
   document.getElementById('mapModalOverlay').style.display = 'flex';
 }
 
-// 關閉 Modal 地圖彈窗
+// 另開外部視窗按鈕功能
+function openExternalMap() {
+  if (currentTargetQuery) {
+    if (/^https?:\/\//i.test(currentTargetQuery)) {
+      window.open(currentTargetQuery, '_blank');
+    } else {
+      const googleSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentTargetQuery)}`;
+      window.open(googleSearchUrl, '_blank');
+    }
+  }
+}
+
 function closeMapModal(event) {
-  // 如果是點擊遮罩外圍或按鈕時關閉
   if (!event || event.target.id === 'mapModalOverlay' || event.target.classList.contains('map-modal-close-btn')) {
     document.getElementById('mapModalOverlay').style.display = 'none';
-    document.getElementById('mapIframe').src = ''; // 停止載入與播放
+    document.getElementById('mapIframe').src = '';
   }
 }
 
@@ -579,7 +696,6 @@ function updateMeta() {
   const fbUrlVal = cleanAndSanitize(document.getElementById('fbUrl').value.trim()) || '申請中';
   const gmapUrlVal = cleanAndSanitize(document.getElementById('gmapUrl').value.trim()) || '同接待中心地址';
 
-  // 即時更新右側資訊欄對照預覽
   document.getElementById('previewAddress').innerText = addressVal;
   document.getElementById('previewPhone').innerText = phoneVal;
   document.getElementById('previewFb').innerText = fbUrlVal;
@@ -592,7 +708,7 @@ function updateMeta() {
     const name = cleanAndSanitize(row.querySelector('.email-name').value.trim());
     const addr = cleanAndSanitize(row.querySelector('.email-addr').value.trim());
     if (name || addr) {
-      emailList.push(`${name}<${addr}>`);
+      emailList.push(name ? `${name}<${addr}>` : addr);
     }
   });
   const emailsStr = emailList.join('; ');
@@ -618,7 +734,6 @@ function updateMeta() {
   document.getElementById('codeOutput').textContent = generatedTxtOutput;
 }
 
-// 一鍵複製文字功能
 function copyText() {
   navigator.clipboard.writeText(generatedTxtOutput).then(() => {
     alert('已成功複製內容到剪貼簿！');
@@ -627,7 +742,6 @@ function copyText() {
   });
 }
 
-// 下載 txt 檔案功能
 function downloadTxt() {
   const code = generatedTxtOutput;
   
@@ -651,7 +765,6 @@ function downloadTxt() {
   URL.revokeObjectURL(link.href);
 }
 
-// 手機版浮動按鈕切換
 let isAtPreview = false;
 
 function toggleScroll() {
@@ -665,7 +778,6 @@ function toggleScroll() {
   }
 }
 
-// 監聽滾動事件，自動切換按鈕狀態
 window.addEventListener('scroll', function() {
   const previewPanel = document.getElementById('previewPanel');
   const btn = document.getElementById('floatBtn');
