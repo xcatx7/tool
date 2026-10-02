@@ -110,9 +110,48 @@
     .info-list-item { margin-bottom: 6px; line-height: 1.4; word-break: break-all; }
     .info-list-item b { color: #333; }
 
-    button.download-btn { background: #c00; color: white; border: none; transition: background .2s; padding: 20px 12px; border-radius: 4px; cursor: pointer; margin-top: 12px; width: 100%; font-weight: bold; font-size: 0.95rem; }
-    @media (max-width: 768px) { button.download-btn { width: 100%; margin: 12px auto 0 0; display: block; } }
-    button.download-btn:hover { background: #1557b0; }
+    /* 程式碼展示框 */
+    .output-box {
+      margin-top: 15px;
+      background: #272822;
+      color: #f8f8f2;
+      padding: 12px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      white-space: pre-wrap;
+      word-break: break-all;
+      text-align: left;
+    }
+
+    /* 按鈕樣式 */
+    .btn-group { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+    
+    button.copy-btn {
+      background: #1a73e8;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.95rem;
+      transition: background .2s;
+    }
+    button.copy-btn:hover { background: #1557b0; }
+
+    button.download-btn {
+      background: #c00;
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.95rem;
+      transition: background .2s;
+    }
+    button.download-btn:hover { background: #900; }
 
     /* 手機版快速切換浮動按鈕 */
     .float-nav-btn {
@@ -136,12 +175,86 @@
     @media (max-width: 768px) {
       .float-nav-btn { display: flex; align-items: center; gap: 6px; }
     }
+
+    /* Modal 地圖彈窗樣式 (方案二) */
+    .map-modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.65);
+      z-index: 99999;
+      align-items: center;
+      justify-content: center;
+      padding: 15px;
+    }
+    .map-modal-card {
+      background: #fff;
+      width: 100%;
+      max-width: 600px;
+      height: 80vh;
+      max-height: 550px;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      animation: fadeInModal 0.25s ease-out;
+    }
+    @keyframes fadeInModal {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .map-modal-header {
+      padding: 12px 16px;
+      background: #1a73e8;
+      color: #fff;
+      font-weight: bold;
+      font-size: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .map-modal-close-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.4rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0 4px;
+    }
+    .map-modal-body {
+      flex: 1;
+      width: 100%;
+      background: #f0f0f0;
+    }
+    .map-modal-body iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
   </style>
 </head>
 <body>
 
 <!-- 手機版浮動導航按鈕 -->
 <button id="floatBtn" class="float-nav-btn" onclick="toggleScroll()">看模擬 👇</button>
+
+<!-- 地圖彈窗 Modal (方案二：不離開頁面) -->
+<div class="map-modal-overlay" id="mapModalOverlay" onclick="closeMapModal(event)">
+  <div class="map-modal-card" onclick="event.stopPropagation()">
+    <div class="map-modal-header">
+      <span>📍 Google 地圖定位驗證</span>
+      <button class="map-modal-close-btn" onclick="closeMapModal()">✕</button>
+    </div>
+    <div class="map-modal-body">
+      <iframe id="mapIframe" src="" allowfullscreen="" loading="lazy"></iframe>
+    </div>
+  </div>
+</div>
 
 <div class="container">
     <!-- 區塊二：基本資訊 -->
@@ -273,16 +386,20 @@
       <div class="info-list-item"><b>Email：</b><span id="previewEmail">未填寫</span></div>
     </div>
 
-    <!-- 隱藏的程式碼輸出區（供下載功能讀取資料） -->
-    <div id="codeOutput" style="display: none;"></div>
+    <!-- 程式碼展示框 -->
+    <h2 style="margin-top: 25px;">生成內容預覽</h2>
+    <div class="output-box" id="codeOutput"></div>
 
-    <!-- HTML 程式碼區 -->
-    <button class="download-btn" onclick="downloadTxt()">請下載文字檔提供</button>
+    <!-- 操作按鈕組 -->
+    <div class="btn-group">
+      <button class="copy-btn" onclick="copyText()">📋 一鍵複製文字內容</button>
+      <button class="download-btn" onclick="downloadTxt()">請下載文字檔提供</button>
+    </div>
   </div>
 </div>
 
 <script>
-// 全域變數，直接儲存包含標準換行符號的文字，避免經由 DOM 讀取導致換行被吃掉
+// 全域變數，直接儲存包含標準換行符號的文字
 let generatedTxtOutput = '';
 
 // 1. 網址參數解析與自動校正防呆
@@ -365,7 +482,7 @@ function checkEmailAddBtnState() {
   addBtn.style.display = (count >= 5) ? 'none' : 'inline-block';
 }
 
-// GMAP 位置一鍵開圖驗證功能 (支援 LINE 跳轉防誤關機制)
+// GMAP 位置一鍵開圖驗證功能 (方案二： Modal 彈窗內嵌預覽，100% 不離開頁面)
 function verifyGmapLocation() {
   let gmapInput = document.getElementById('gmapUrl').value.trim();
   let addressInput = document.getElementById('address').value.trim();
@@ -380,21 +497,26 @@ function verifyGmapLocation() {
     return;
   }
 
-  // 1. 如果輸入的是標準網址，直接開啟
+  const iframe = document.getElementById('mapIframe');
+  
+  // 1. 如果貼的是完整的 Google Maps 網址，直接當作來源
   if (/^https?:\/\//i.test(targetQuery)) {
-    window.open(targetQuery, '_blank');
-    return;
+    iframe.src = targetQuery;
+  } else {
+    // 2. 如果是文字地址/名稱，透過 Google Maps Embed API 預覽
+    iframe.src = `https://maps.google.com/maps?q=${encodeURIComponent(targetQuery)}&output=embed`;
   }
 
-  // 2. 判斷是否在 LINE 環境下
-  const isLine = /Line/i.test(navigator.userAgent);
-  
-  if (isLine) {
-    // 使用 Google Maps 的 intent / app deep link，喚起原生地圖 App
-    window.location.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(targetQuery)}`;
-  } else {
-    // 一般瀏覽器直接開新分頁
-    window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(targetQuery)}`, '_blank');
+  // 顯示 Modal 遮罩彈窗
+  document.getElementById('mapModalOverlay').style.display = 'flex';
+}
+
+// 關閉 Modal 地圖彈窗
+function closeMapModal(event) {
+  // 如果是點擊遮罩外圍或按鈕時關閉
+  if (!event || event.target.id === 'mapModalOverlay' || event.target.classList.contains('map-modal-close-btn')) {
+    document.getElementById('mapModalOverlay').style.display = 'none';
+    document.getElementById('mapIframe').src = ''; // 停止載入與播放
   }
 }
 
@@ -436,13 +558,12 @@ function updateMeta() {
   const kwInputs = document.querySelectorAll('.kw-input');
   const kwArray = [];
   const tagContainer = document.getElementById('previewKeywordsTag');
-  tagContainer.innerHTML = ''; // 清空舊標籤
+  tagContainer.innerHTML = '';
 
   kwInputs.forEach(input => {
     const val = cleanAndSanitize(input.value.trim());
     if (val !== '' && !kwArray.includes(val)) {
       kwArray.push(val);
-      // 動態建立小圓角標籤
       const span = document.createElement('span');
       span.className = 'kw-tag';
       span.innerText = `# ${val}`;
@@ -477,7 +598,7 @@ function updateMeta() {
   const emailsStr = emailList.join('; ');
   document.getElementById('previewEmail').innerText = emailsStr || '未填寫';
 
-  // F. 生成輸出文字 (使用 \r\n 強制換行，確保下檔 TXT 保留段落)
+  // F. 生成輸出文字
   const safeTitle = fullTitle.replace(/'/g, "\\'");
   const safeDesc = descText.replace(/'/g, "\\'");
   const safeKeywords = keywordsStr.replace(/'/g, "\\'");
@@ -497,6 +618,15 @@ function updateMeta() {
   document.getElementById('codeOutput').textContent = generatedTxtOutput;
 }
 
+// 一鍵複製文字功能
+function copyText() {
+  navigator.clipboard.writeText(generatedTxtOutput).then(() => {
+    alert('已成功複製內容到剪貼簿！');
+  }).catch(() => {
+    alert('複製失敗，請手動選取文字複製。');
+  });
+}
+
 // 下載 txt 檔案功能
 function downloadTxt() {
   const code = generatedTxtOutput;
@@ -512,7 +642,6 @@ function downloadTxt() {
 
   const fileName = `tdk-${safeFileNameCase}${dateStr}.txt`;
 
-  // \uFEFF UTF-8 BOM 防亂碼
   const blob = new Blob(['\uFEFF' + code], { type: 'text/plain;charset=utf-8' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
