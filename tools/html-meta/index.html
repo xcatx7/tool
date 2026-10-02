@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>網站 Meta 標籤生成與手機版預覽工具 (SEO 最佳化版)</title>
+  <title>網站必要基本資料</title>
   <style>
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
     html { scroll-behavior: smooth; } /* 平滑滾動 */
@@ -75,8 +75,40 @@
       word-break: break-word;
     }
 
+    /* 關鍵字小標籤樣式 */
+    .kw-tag-container {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed #e0e0e0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+    .kw-tag {
+      background: #e8f0fe;
+      color: #1a73e8;
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-weight: 500;
+    }
+
     .example-box { margin-top: 20px; padding: 12px; background: #f8f9fa; border: 1px dashed #adc6ff; border-radius: 6px; text-align: left; font-size: 0.85rem; color: #555; }
     .example-box h3 { margin: 0 0 8px 0; font-size: 0.95rem; color: #1a73e8; }
+
+    /* 基本資訊對照條列樣式 */
+    .info-list-box {
+      margin-top: 15px;
+      padding: 12px;
+      background: #ffffff;
+      border: 1px solid #e8eaed;
+      border-radius: 6px;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+    .info-list-box h3 { margin: 0 0 8px 0; font-size: 0.95rem; color: #34a853; }
+    .info-list-item { margin-bottom: 6px; line-height: 1.4; word-break: break-all; }
+    .info-list-item b { color: #333; }
 
     button.download-btn { background: #c00; color: white; border: none; transition: background .2s; padding: 20px 12px; border-radius: 4px; cursor: pointer; margin-top: 12px; width: 100%; font-weight: bold; font-size: 0.95rem; }
     @media (max-width: 768px) { button.download-btn { width: 100%; margin: 12px auto 0 0; display: block; } }
@@ -215,6 +247,11 @@
         <div class="google-url" id="previewUrl">https://www.example.com.tw</div>
         <div class="google-title" id="previewTitle">標題預覽</div>
         <div class="google-desc" id="previewDesc">描述預覽</div>
+        
+        <!-- 動態關鍵字小標籤列 -->
+        <div class="kw-tag-container" id="previewKeywordsTag">
+          <!-- 關鍵字標籤會自動掛載於此 -->
+        </div>
       </div>
     </div>
 
@@ -224,6 +261,16 @@
       <div><b>title：</b>紐約心光｜預備展開生活新居式｜官網</div>
       <div style="margin-top: 4px;"><b>description：</b>紐約心光：大台北布魯克林，聚焦行政中心核心區，再享公園校園愜意價值，接待中心：新北市八里區商港路2號，電話：02-26101786</div>
       <div style="margin-top: 4px;"><b>keyword：</b>紐約心光,八里建案,八里買房,台北港重劃區,新北買房</div>
+    </div>
+
+    <!-- 基本資訊對照預覽條列區塊 -->
+    <div class="info-list-box">
+      <h3>📋 輸入基本資訊對照預覽</h3>
+      <div class="info-list-item"><b>地址：</b><span id="previewAddress">不公開</span></div>
+      <div class="info-list-item"><b>電話：</b><span id="previewPhone">不公開</span></div>
+      <div class="info-list-item"><b>FB：</b><span id="previewFb">申請中</span></div>
+      <div class="info-list-item"><b>GMAP：</b><span id="previewGmap">同接待中心地址</span></div>
+      <div class="info-list-item"><b>Email：</b><span id="previewEmail">未填寫</span></div>
     </div>
 
     <!-- 隱藏的程式碼輸出區（供下載功能讀取資料） -->
@@ -374,13 +421,21 @@ function updateMeta() {
     descCounter.innerHTML = `字數：${descLen} 字`;
   }
 
-  // C. Keywords
+  // C. Keywords 與手機模擬區標籤渲染
   const kwInputs = document.querySelectorAll('.kw-input');
   const kwArray = [];
+  const tagContainer = document.getElementById('previewKeywordsTag');
+  tagContainer.innerHTML = ''; // 清空舊標籤
+
   kwInputs.forEach(input => {
     const val = cleanAndSanitize(input.value.trim());
     if (val !== '' && !kwArray.includes(val)) {
       kwArray.push(val);
+      // 動態建立小圓角標籤
+      const span = document.createElement('span');
+      span.className = 'kw-tag';
+      span.innerText = `# ${val}`;
+      tagContainer.appendChild(span);
     }
   });
   const keywordsStr = kwArray.join(',');
@@ -391,6 +446,12 @@ function updateMeta() {
   const phoneVal = cleanAndSanitize(document.getElementById('phone').value.trim()) || '不公開';
   const fbUrlVal = cleanAndSanitize(document.getElementById('fbUrl').value.trim()) || '申請中';
   const gmapUrlVal = cleanAndSanitize(document.getElementById('gmapUrl').value.trim()) || '同接待中心地址';
+
+  // 即時更新右側資訊欄對照預覽
+  document.getElementById('previewAddress').innerText = addressVal;
+  document.getElementById('previewPhone').innerText = phoneVal;
+  document.getElementById('previewFb').innerText = fbUrlVal;
+  document.getElementById('previewGmap').innerText = gmapUrlVal;
 
   // E. 處理收名單信箱
   const emailRows = document.querySelectorAll('.email-row');
@@ -403,6 +464,7 @@ function updateMeta() {
     }
   });
   const emailsStr = emailList.join('; ');
+  document.getElementById('previewEmail').innerText = emailsStr || '未填寫';
 
   // F. 生成輸出文字 (使用 \r\n 強制換行，確保下檔 TXT 保留段落)
   const safeTitle = fullTitle.replace(/'/g, "\\'");
@@ -426,7 +488,6 @@ function updateMeta() {
 
 // 下載 txt 檔案功能
 function downloadTxt() {
-  // 直接讀取帶有 \r\n 換行的變數內容
   const code = generatedTxtOutput;
   
   let rawCaseName = document.getElementById('caseName').value.trim();
