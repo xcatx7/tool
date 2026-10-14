@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Particle Ring Generator</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        margin: 0; background: #334155; color: #fff; overflow: hidden; user-select: none;
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Noto Sans TC', sans-serif;
+    }
+    #stage { position: fixed; inset: 0; }
+    canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+
+    #holeGuide {
+        position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+        border: 1.5px dashed rgba(91, 184, 204, .75); border-radius: 50%;
+        pointer-events: none; display: flex; align-items: center; justify-content: center;
+        color: #7aa9b5; font-size: 12px; letter-spacing: .1em;
+    }
+    .title { position: absolute; top: 24px; left: 24px; pointer-events: none; z-index: 5; }
+    .title h1 { margin: 0; font-size: 18px; letter-spacing: .12em; color: #0891b2; }
+    .title p { margin: 4px 0 0; font-size: 12px; color: #94a3b8; }
+
+    .glass {
+        background: rgba(255, 255, 255, .92); backdrop-filter: blur(12px);
+        border: 1px solid rgba(100, 160, 180, .25); box-shadow: 0 8px 30px rgba(100, 160, 180, .18);
+    }
+    #gearBtn {
+        position: absolute; top: 20px; right: 20px; z-index: 20; width: 42px; height: 42px;
+        border-radius: 12px; cursor: pointer; font-size: 20px; color: #64748b;
+    }
+    #gearBtn:hover { color: #0891b2; }
+    #panel {
+        position: absolute; top: 72px; right: 20px; z-index: 20; width: 330px;
+        max-height: calc(100vh - 92px); overflow-y: auto; border-radius: 16px; padding: 16px 18px 18px;
+        font-size: 13px;
+    }
+    #panel.hidden { display: none; }
+    .group { margin: 14px 0 6px; font-size: 11px; font-weight: 700; letter-spacing: .12em; color: #0891b2; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+    .group:first-child { margin-top: 0; }
+    .row { margin: 8px 0; }
+    .row .top { display: flex; justify-content: space-between; color: #64748b; font-size: 12px; margin-bottom: 2px; }
+    .row .top b { font-family: ui-monospace, Menlo, monospace; color: #0891b2; font-weight: 600; }
+    input[type=range] { width: 100%; accent-color: #5bb8cc; margin: 0; }
+    .inline { display: flex; align-items: center; justify-content: space-between; margin: 10px 0; color: #64748b; font-size: 12px; }
+    .btn {
+        border: 1px solid #bfe3ec; background: #f0fafc; color: #0e7490; border-radius: 10px;
+        padding: 7px 12px; cursor: pointer; font-size: 12px;
+    }
+    .btn:hover { background: #def3f8; }
+    .btn.primary { background: #0891b2; border-color: #0891b2; color: #fff; width: 100%; padding: 10px; font-size: 13px; margin-top: 12px; }
+    .btn.primary:hover { background: #0e7490; }
+    input[type=color] { width: 40px; height: 26px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0; background: #fff; cursor: pointer; }
+
+    #modal { position: fixed; inset: 0; z-index: 50; background: rgba(15, 23, 42, .35); display: none; align-items: center; justify-content: center; padding: 20px; }
+    #modal.open { display: flex; }
+    #modalCard { width: min(820px, 100%); max-height: 90vh; display: flex; flex-direction: column; border-radius: 16px; padding: 18px; background: #fff; box-shadow: 0 20px 60px rgba(15,23,42,.3); }
+    #modalHead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    #modalHead h2 { margin: 0; font-size: 15px; }
+    .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+    .tab { border: 1px solid #e2e8f0; background: #fff; border-radius: 8px; padding: 5px 12px; font-size: 12px; cursor: pointer; color: #64748b; }
+    .tab.active { background: #0891b2; border-color: #0891b2; color: #fff; }
+    #codeBox {
+        flex: 1; min-height: 320px; width: 100%; resize: none; border: 1px solid #e2e8f0; border-radius: 10px;
+        padding: 12px; font: 12px/1.55 ui-monospace, Menlo, Consolas, monospace; color: #1e293b; background: #f8fafc;
+        user-select: text;
+    }
+    #modalFoot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 12px; color: #64748b; }
+</style>
+</head>
+<body>
+<div id="stage">
+    <canvas id="sphereCanvas"></canvas>
+    <div id="holeGuide">中心圖片</div>
+</div>
+
+<div class="title">
+    <h1>NEURAL MESH RING</h1>
+    <p>中空・近平面順時針旋轉的粒子網絡</p>
+</div>
+
+<button id="gearBtn" class="glass" title="設定">⚙</button>
+
+<div id="panel" class="glass">
+    <div id="controls"></div>
+
+    <div class="group">顏色與其他</div>
+    <div class="inline"><span>主題顏色</span><input type="color" id="colorInput" value="#86cfdc"></div>
+    <div class="inline"><span>粒子分布（隨機種子）</span><button class="btn" id="seedBtn">🎲 重新隨機</button></div>
+    <div class="inline"><span>顯示中心留白預覽圈</span><input type="checkbox" id="guideChk" checked></div>
+
+    <button class="btn primary" id="codeBtn">&lt;/&gt; 取得程式碼</button>
+</div>
+
+<div id="modal">
+    <div id="modalCard">
+        <div id="modalHead">
+            <h2>目前設定的程式碼</h2>
+            <button class="btn" id="closeBtn">關閉</button>
+        </div>
+        <div class="tabs">
+            <button class="tab active" data-fmt="html">HTML（直接貼）</button>
+            <button class="tab" data-fmt="vue">Vue 3 元件</button>
+            <button class="tab" data-fmt="json">只有參數</button>
+        </div>
+        <textarea id="codeBox" readonly spellcheck="false"></textarea>
+        <div id="modalFoot">
+            <span id="codeHint">貼進頁面後，把中間的 &lt;img&gt; 換成你的圖片即可。</span>
+            <button class="btn" id="copyBtn">複製程式碼</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ==== ENGINE START（獨立引擎：下方「取得程式碼」會原樣輸出這個函式）====
+function createSphere(canvas, options) {
+    const cfg = Object.assign({
+        count: 120,          // 粒子數量
+        maxDistance: 0.42,   // 連線距離（相對球半徑）
+        hollow: 0.55,        // 中空半徑（相對球半徑，0 = 不中空）
+        hollowFade: 0.08,    // 中空邊緣淡出寬度
+        zSpin: 8,            // 平面旋轉 °/秒（正值 = 順時針）
+        spinY: 5,            // 球體自身 Y 軸自轉 °/秒
+        tiltX: 0,            // 傾斜角度 X（度）
+        tiltY: 0,            // 傾斜角度 Y（度）
+        flatten: 0.4,        // 壓扁程度（1 = 正球，越小越像平面）
+        drift: 1,            // 表面漂移強度
+        fillOpacity: 0.35,   // 三角面濃度
+        dotSize: 1,          // 圓點大小倍率
+        radiusRatio: 0.44,   // 球半徑 / 畫布較短邊
+        triangleChance: 0.55,
+        darkChance: 0.1,
+        color: [134, 207, 220],
+        seed: 7
+    }, options || {});
+
+    const ctx = canvas.getContext('2d');
+    let width = 0, height = 0, dpr = 1;
+    let particles = [], linked = new Uint8Array(0);
+    let spinAngle = 0, zAngle = 0, lastT = 0, rafId = 0, destroyed = false, ro = null;
+
+    function mulberry32(a) {
+        return function () {
+            a |= 0; a = (a + 0x6D2B79F5) | 0;
+            let t = Math.imul(a ^ (a >>> 15), 1 | a);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+
+    // 三個索引 -> 穩定亂數，讓每個三角形的深淺固定、不閃爍
+    function hash3(i, j, k) {
+        let h = Math.imul(i + 1, 73856093) ^ Math.imul(j + 1, 19349663) ^ Math.imul(k + 1, 83492791);
+        h = Math.imul(h ^ (h >>> 13), 1274126177);
+        h ^= h >>> 16;
+        return (h >>> 0) / 4294967295;
+    }
+
+    function build() {
+        const rand = mulberry32(cfg.seed >>> 0);
+        particles = [];
+        for (let i = 0; i < cfg.count; i++) {
+            particles.push({
+                theta: rand() * Math.PI * 2,
+                phi: Math.acos(2 * rand() - 1),
+                pa: rand() * Math.PI * 2, pb: rand() * Math.PI * 2,
+                f1: 0.3 + rand() * 0.6, f2: 0.3 + rand() * 0.6,
+                size: 1.3 + Math.pow(rand(), 2) * 3.2,
+                x: 0, y: 0, z: 0, px: 0, py: 0, rx: 0, ry: 0, rz: 0,
+                scale: 1, depth: 0, vis: 0
+            });
+        }
+        linked = new Uint8Array(cfg.count * cfg.count);
+    }
+
+    function resize() {
+        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        width = canvas.clientWidth || 300;
+        height = canvas.clientHeight || 300;
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function frame(ts) {
+        if (destroyed) return;
+        rafId = requestAnimationFrame(frame);
+
+        const t = ts * 0.001;
+        const dt = lastT ? Math.min(0.05, t - lastT) : 0;
+        lastT = t;
+        spinAngle += cfg.spinY * dt * Math.PI / 180;
+        zAngle += cfg.zSpin * dt * Math.PI / 180;
+
+        ctx.clearRect(0, 0, width, height);
+
+        const cx = width / 2, cy = height / 2;
+        const R = Math.min(width, height) * cfg.radiusRatio;
+        const fov = R * 3.5;
+        const k = R / 280;                        // 讓線寬、點大小隨容器等比縮放
+        const col = cfg.color[0] + ', ' + cfg.color[1] + ', ' + cfg.color[2];
+
+        const cSY = Math.cos(spinAngle), sSY = Math.sin(spinAngle);
+        const tx = cfg.tiltX * Math.PI / 180, ty = cfg.tiltY * Math.PI / 180;
+        const cTX = Math.cos(tx), sTX = Math.sin(tx), cTY = Math.cos(ty), sTY = Math.sin(ty);
+        const cZ = Math.cos(zAngle), sZ = Math.sin(zAngle);
+        const band = Math.max(0.001, cfg.hollowFade);
+        const amp = 0.07 * cfg.drift;
+        const N = particles.length;
+
+        // 1. 更新位置：球面漂移 -> Y 自轉 -> 傾斜 -> 壓扁 -> 平面順時針旋轉 -> 投影
+        const idx = [];
+        for (let i = 0; i < N; i++) {
+            const p = particles[i];
+            const th = p.theta + Math.sin(p.pa + t * p.f1) * amp;
+            const ph = Math.min(Math.PI - 0.02, Math.max(0.02, p.phi + Math.cos(p.pb + t * p.f2) * amp));
+            let x = R * Math.sin(ph) * Math.cos(th);
+            let y = R * Math.cos(ph);
+            let z = R * Math.sin(ph) * Math.sin(th);
+
+            let x1 = x * cSY - z * sSY; let z1 = z * cSY + x * sSY; x = x1; z = z1;
+            let y2 = y * cTX - z * sTX; let z2 = z * cTX + y * sTX; y = y2; z = z2;
+            let x3 = x * cTY - z * sTY; let z3 = z * cTY + x * sTY; x = x3; z = z3;
+
+            p.depth = (z / R + 1) / 2;
+            z *= cfg.flatten;
+            // 畫面座標 y 向下，所以這個旋轉矩陣的正角度 = 視覺上順時針
+            const xs = x * cZ - y * sZ;
+            const ys = x * sZ + y * cZ;
+            p.rx = xs; p.ry = ys; p.rz = z;
+            p.scale = fov / (fov - z);
+            p.px = xs * p.scale + cx;
+            p.py = ys * p.scale + cy;
+
+            const rho = Math.hypot(p.px - cx, p.py - cy) / R;
+            p.vis = Math.min(1, Math.max(0, (rho - cfg.hollow) / band));
+            if (p.vis > 0) idx.push(i);
+        }
+
+        // 2. 三角面（只在中空區以外）
+        const D = cfg.maxDistance * R, D2 = D * D, m = idx.length;
+        linked.fill(0);
+        for (let a = 0; a < m; a++) {
+            const i = idx[a], p1 = particles[i];
+            for (let b = a + 1; b < m; b++) {
+                const j = idx[b], p2 = particles[j];
+                const dx = p1.rx - p2.rx, dy = p1.ry - p2.ry, dz = p1.rz - p2.rz;
+                if (dx * dx + dy * dy + dz * dz >= D2) continue;
+                linked[i * N + j] = 1;
+                if (cfg.fillOpacity <= 0) continue;
+                for (let c = b + 1; c < m; c++) {
+                    const l = idx[c], p3 = particles[l];
+                    const ex = p1.rx - p3.rx, ey = p1.ry - p3.ry, ez = p1.rz - p3.rz;
+                    if (ex * ex + ey * ey + ez * ez >= D2) continue;
+                    const fx = p2.rx - p3.rx, fy = p2.ry - p3.ry, fz = p2.rz - p3.rz;
+                    if (fx * fx + fy * fy + fz * fz >= D2) continue;
+                    if (hash3(i, j, l) > cfg.triangleChance) continue;
+
+                    const dark = hash3(l, j, i) < cfg.darkChance;
+                    const tone = dark ? 0.6 + hash3(j, l, i) * 0.4 : 0.15 + hash3(j, i, l) * 0.25;
+                    const depth = (p1.depth + p2.depth + p3.depth) / 3;
+                    const alpha = cfg.fillOpacity * tone * (0.25 + 0.75 * depth) * Math.min(p1.vis, p2.vis, p3.vis);
+                    ctx.beginPath();
+                    ctx.moveTo(p1.px, p1.py); ctx.lineTo(p2.px, p2.py); ctx.lineTo(p3.px, p3.py);
+                    ctx.closePath();
+                    ctx.fillStyle = 'rgba(' + col + ', ' + alpha.toFixed(3) + ')';
+                    ctx.fill();
+                }
+            }
+        }
+
+        // 3. 細線
+        ctx.lineWidth = Math.max(0.5, 0.7 * k);
+        for (let a = 0; a < m; a++) {
+            const i = idx[a], p1 = particles[i];
+            for (let b = a + 1; b < m; b++) {
+                const j = idx[b];
+                if (!linked[i * N + j]) continue;
+                const p2 = particles[j];
+                const dx = p1.rx - p2.rx, dy = p1.ry - p2.ry, dz = p1.rz - p2.rz;
+                const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                const depth = (p1.depth + p2.depth) / 2;
+                const alpha = (1 - dist / D) * 0.45 * (0.3 + 0.7 * depth) * Math.min(p1.vis, p2.vis);
+                ctx.beginPath();
+                ctx.moveTo(p1.px, p1.py); ctx.lineTo(p2.px, p2.py);
+                ctx.strokeStyle = 'rgba(' + col + ', ' + alpha.toFixed(3) + ')';
+                ctx.stroke();
+            }
+        }
+
+        // 4. 圓點：大小不一，前面較實、後面較淡
+        for (let a = 0; a < m; a++) {
+            const p = particles[idx[a]];
+            const size = Math.max(0.8, p.size * p.scale * cfg.dotSize * k);
+            const alpha = (0.35 + 0.65 * p.depth) * p.vis;
+            ctx.beginPath();
+            ctx.arc(p.px, p.py, size, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(' + col + ', ' + alpha.toFixed(2) + ')';
+            ctx.fill();
+        }
+    }
+
+    build();
+    resize();
+    if (typeof ResizeObserver !== 'undefined') {
+        ro = new ResizeObserver(resize);
+        ro.observe(canvas);
+    } else {
+        window.addEventListener('resize', resize);
+    }
+    rafId = requestAnimationFrame(frame);
+
+    return {
+        cfg: cfg,
+        rebuild: build,
+        resize: resize,
+        destroy: function () {
+            destroyed = true;
+            cancelAnimationFrame(rafId);
+            if (ro) ro.disconnect(); else window.removeEventListener('resize', resize);
+        }
+    };
+}
+// ==== ENGINE END ====
+
+// ==== CODEGEN START ====
+function buildCode(format, cfg, engineSrc) {
+    const OPEN = '<' + 'script', CLOSE = '</' + 'script>';
+    const literal = function (indent) {
+        const pad = ' '.repeat(indent);
+        return '{\n' + Object.keys(cfg).map(function (key) {
+            return pad + '    ' + key + ': ' + JSON.stringify(cfg[key]) + ',';
+        }).join('\n') + '\n' + pad + '}';
+    };
+    // 中間圖片的建議寬度：剛好填滿中空區域
+    const imgPct = Math.max(10, Math.round(cfg.hollow * cfg.radiusRatio * 200));
+
+    const css =
+`.sphere-wrap { position: relative; width: min(90vw, 640px); aspect-ratio: 1 / 1; }
+.sphere-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.sphere-center {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: ${imgPct}%; height: auto; border-radius: 50%; object-fit: cover;
+}`;
+
+    if (format === 'json') {
+        return 'const SPHERE_CONFIG = ' + literal(0) + ';\n\n// 使用方式： createSphere(canvasElement, SPHERE_CONFIG);';
+    }
+
+    if (format === 'vue') {
+        return `<template>
+    <div class="sphere-wrap">
+        <canvas ref="canvasRef" class="sphere-canvas"></canvas>
+        <img class="sphere-center" src="/你的圖片.png" alt="" />
+    </div>
+</template>
+
+${OPEN} setup>
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+
+const canvasRef = ref(null)
+let sphere = null
+
+${engineSrc}
+
+onMounted(() => {
+    sphere = createSphere(canvasRef.value, ${literal(4)})
+})
+onBeforeUnmount(() => {
+    if (sphere) sphere.destroy()
+})
+${CLOSE}
+
+<style scoped>
+${css}
+</style>
+`;
+    }
+
+    return `<div class="sphere-wrap">
+    <canvas id="sphereCanvas" class="sphere-canvas"></canvas>
+    <!-- 中間放你的圖片（寬度已依中空範圍算好，可自行微調） -->
+    <img class="sphere-center" src="你的圖片.png" alt="">
+</div>
+
+<style>
+${css}
+</style>
+
+${OPEN}>
+${engineSrc}
+
+createSphere(document.getElementById('sphereCanvas'), ${literal(0)});
+${CLOSE}
+`;
+}
+// ==== CODEGEN END ====
+
+// ===================== 頁面 UI =====================
+const canvas = document.getElementById('sphereCanvas');
+const sphere = createSphere(canvas, {});
+const cfg = sphere.cfg;
+
+const CONTROLS = [
+    { group: '形狀', key: 'count',       label: '粒子數量',                       min: 20,   max: 300, step: 5,    dp: 0, rebuild: true },
+    { group: '形狀', key: 'radiusRatio', label: '球體大小（相對畫布）',           min: 0.25, max: 0.5, step: 0.01, dp: 2 },
+    { group: '形狀', key: 'hollow',      label: '中空半徑（中心留白）',           min: 0,    max: 0.9, step: 0.01, dp: 2 },
+    { group: '形狀', key: 'flatten',     label: '壓扁程度（越小越像平面）',       min: 0.05, max: 1,   step: 0.05, dp: 2 },
+    { group: '形狀', key: 'maxDistance', label: '連線距離（相對半徑）',           min: 0.15, max: 1,   step: 0.01, dp: 2 },
+    { group: '旋轉', key: 'zSpin',       label: '平面旋轉 °/秒（正＝順時針）',    min: -90,  max: 90,  step: 1,    dp: 0 },
+    { group: '旋轉', key: 'spinY',       label: '球體 Y 軸自轉 °/秒',             min: -90,  max: 90,  step: 1,    dp: 0 },
+    { group: '旋轉', key: 'tiltX',       label: '傾斜角度 X（°）',                min: -90,  max: 90,  step: 1,    dp: 0 },
+    { group: '旋轉', key: 'tiltY',       label: '傾斜角度 Y（°）',                min: -90,  max: 90,  step: 1,    dp: 0 },
+    { group: '外觀', key: 'drift',       label: '表面漂移強度',                   min: 0,    max: 3,   step: 0.1,  dp: 1 },
+    { group: '外觀', key: 'fillOpacity', label: '三角面濃度',                     min: 0,    max: 0.7, step: 0.05, dp: 2 },
+    { group: '外觀', key: 'dotSize',     label: '圓點大小',                       min: 0.4,  max: 2.5, step: 0.1,  dp: 1 }
+];
+
+const inputs = {}, outputs = {};
+const controlsEl = document.getElementById('controls');
+let lastGroup = '';
+CONTROLS.forEach(function (c) {
+    if (c.group !== lastGroup) {
+        const h = document.createElement('div');
+        h.className = 'group';
+        h.textContent = c.group;
+        controlsEl.appendChild(h);
+        lastGroup = c.group;
+    }
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = '<div class="top"><span>' + c.label + '</span><b></b></div>' +
+        '<input type="range" min="' + c.min + '" max="' + c.max + '" step="' + c.step + '">';
+    const input = row.querySelector('input'), out = row.querySelector('b');
+    inputs[c.key] = input; outputs[c.key] = out;
+    input.addEventListener('input', function () {
+        setControl(c.key, parseFloat(input.value));
+        if (c.rebuild) sphere.rebuild();
+    });
+    controlsEl.appendChild(row);
+});
+
+function setControl(key, val) {
+    const c = CONTROLS.find(function (x) { return x.key === key; });
+    cfg[key] = val;
+    inputs[key].value = val;
+    outputs[key].textContent = val.toFixed(c.dp);
+    updateGuide();
+    refreshCode();
+}
+
+// 中心留白預覽圈
+const guide = document.getElementById('holeGuide');
+const guideChk = document.getElementById('guideChk');
+function updateGuide() {
+    const R = Math.min(window.innerWidth, window.innerHeight) * cfg.radiusRatio;
+    const d = 2 * cfg.hollow * R;
+    guide.style.display = (guideChk.checked && d > 4) ? 'flex' : 'none';
+    guide.style.width = d + 'px';
+    guide.style.height = d + 'px';
+}
+guideChk.addEventListener('change', updateGuide);
+window.addEventListener('resize', updateGuide);
+
+// 顏色
+function hexToRgb(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+document.getElementById('colorInput').addEventListener('input', function (e) {
+    cfg.color = hexToRgb(e.target.value);
+    refreshCode();
+});
+
+// 隨機種子
+document.getElementById('seedBtn').addEventListener('click', function () {
+    cfg.seed = Math.floor(Math.random() * 1000000);
+    sphere.rebuild();
+    refreshCode();
+});
+
+// 面板開關
+const panel = document.getElementById('panel');
+document.getElementById('gearBtn').addEventListener('click', function () { panel.classList.toggle('hidden'); });
+
+// 取得程式碼
+const modal = document.getElementById('modal');
+const codeBox = document.getElementById('codeBox');
+const hintEl = document.getElementById('codeHint');
+let currentFmt = 'html';
+const HINTS = {
+    html: '貼進頁面後，把中間的 <img> 換成你的圖片即可。',
+    vue: '存成 .vue 元件（Vue 3 <script setup>），圖片路徑自行替換。',
+    json: '只含目前參數，搭配上面的引擎函式使用。'
+};
+function refreshCode() {
+    if (!modal.classList.contains('open')) return;
+    codeBox.value = buildCode(currentFmt, cfg, createSphere.toString());
+    hintEl.textContent = HINTS[currentFmt];
+}
+document.getElementById('codeBtn').addEventListener('click', function () {
+    modal.classList.add('open');
+    refreshCode();
+});
+document.getElementById('closeBtn').addEventListener('click', function () { modal.classList.remove('open'); });
+modal.addEventListener('click', function (e) { if (e.target === modal) modal.classList.remove('open'); });
+document.querySelectorAll('.tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+        document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
+        tab.classList.add('active');
+        currentFmt = tab.dataset.fmt;
+        refreshCode();
+    });
+});
+document.getElementById('copyBtn').addEventListener('click', function () {
+    const btn = this;
+    const done = function () {
+        btn.textContent = '已複製 ✓';
+        setTimeout(function () { btn.textContent = '複製程式碼'; }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(codeBox.value).then(done, function () {
+            codeBox.select(); document.execCommand('copy'); done();
+        });
+    } else {
+        codeBox.select(); document.execCommand('copy'); done();
+    }
+});
+
+// 所有元素與函式都建立完成後，才套用初始數值
+CONTROLS.forEach(function (c) { setControl(c.key, cfg[c.key]); });
+</script>
+</body>
+</html>
