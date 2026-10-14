@@ -1,5 +1,10 @@
 [
   {
+    "name": "canvas-粒子旋轉圓球",
+    "date": "2026-10-14",
+    "path": "tools/canvas-3d-ring/index.html"
+  },
+  {
     "name": "svg-玻璃濾鏡",
     "date": "2026-09-29",
     "path": "tools/svg-glass/index.html"
