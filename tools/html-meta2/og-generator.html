@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OG 分享圖產生器</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', 'Noto Sans TC', sans-serif; }
+    .checker {
+      background-color: #fff;
+      background-image:
+        linear-gradient(45deg, #e2e8f0 25%, transparent 25%),
+        linear-gradient(-45deg, #e2e8f0 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #e2e8f0 75%),
+        linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    }
+    input[type=range] { accent-color: #4f46e5; }
+    .drop-active { outline: 2px dashed #6366f1; outline-offset: 2px; background: #eef2ff; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center space-x-3">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-indigo-600 text-white shadow-sm">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        </span>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 tracking-tight">OG 分享圖產生器</h1>
+          <p class="text-xs text-slate-500">背景色 / 背景圖 + 置中 Logo，一鍵輸出 1200×630 og.png</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="index.html" class="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200">← 回 Meta 工具</a>
+        <button id="resetBtn" type="button" class="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200">重設</button>
+        <button id="downloadTopBtn" type="button" class="px-3.5 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-all flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          下載 og.png
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- 預覽 -->
+      <section class="lg:col-span-8 space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+            <div>
+              <h2 class="text-sm font-bold text-slate-900">🖼️ 即時預覽</h2>
+              <p class="text-xs text-slate-500 mt-0.5">可直接把圖片拖進預覽區：拖到中央 = Logo，拖到外圍 = 背景</p>
+            </div>
+            <label class="flex items-center gap-1.5 text-xs text-slate-600 select-none cursor-pointer">
+              <input type="checkbox" id="showGuide" checked class="accent-indigo-600"> 顯示安全區輔助線
+            </label>
+          </div>
+          <div id="stage" class="relative checker rounded-xl overflow-hidden border border-slate-200 transition">
+            <canvas id="canvas" width="1200" height="630" class="block w-full h-auto"></canvas>
+            <canvas id="guide" width="1200" height="630" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+          </div>
+          <p class="text-[11px] text-slate-400">輸出尺寸固定 1200 × 630（1.91:1），符合 Facebook / LINE / X 建議規格。虛線框為 LINE 裁切成方形縮圖時仍會保留的範圍。</p>
+        </div>
+
+        <!-- 社群小卡預覽 -->
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-3">
+          <h2 class="text-sm font-bold text-slate-900 pb-2 border-b border-slate-100">📱 分享卡片效果</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="bg-[#788eab]/15 p-4 rounded-xl flex justify-center">
+              <div class="w-full max-w-xs bg-white rounded-xl overflow-hidden shadow-md border border-slate-200/80">
+                <img id="cardImgA" class="w-full aspect-[1.91/1] object-cover bg-slate-200" alt="">
+                <div class="p-3 space-y-1">
+                  <div class="h-2.5 w-4/5 bg-slate-200 rounded"></div>
+                  <div class="h-2 w-3/5 bg-slate-100 rounded"></div>
+                </div>
+              </div>
+            </div>
+            <div class="bg-[#788eab]/15 p-4 rounded-xl flex items-center justify-center gap-3">
+              <img id="cardImgB" class="w-24 h-24 object-cover rounded-lg bg-slate-200 shadow" alt="">
+              <div class="space-y-1.5 flex-1 max-w-[10rem]">
+                <p class="text-[11px] text-slate-500">LINE 小卡 / 方形縮圖</p>
+                <div class="h-2.5 w-full bg-white rounded"></div>
+                <div class="h-2 w-3/4 bg-white/70 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 設定 -->
+      <section class="lg:col-span-4 space-y-4">
+
+        <!-- 背景 -->
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-3">
+          <h2 class="text-sm font-bold text-slate-900 pb-2 border-b border-slate-100">🎨 背景</h2>
+
+          <div class="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-lg text-xs font-semibold">
+            <button type="button" data-bg="color" class="bg-tab py-1.5 rounded-md">純色</button>
+            <button type="button" data-bg="gradient" class="bg-tab py-1.5 rounded-md">漸層</button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <input type="color" id="bgColor" class="w-10 h-9 rounded-lg border border-slate-200 cursor-pointer p-0.5 bg-white">
+            <input type="text" id="bgColorHex" class="flex-1 min-w-0 px-2.5 py-1.5 text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+            <div id="gradWrap" class="hidden contents">
+              <input type="color" id="bgColor2" class="w-10 h-9 rounded-lg border border-slate-200 cursor-pointer p-0.5 bg-white">
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-1.5" id="swatches"></div>
+
+          <div class="pt-2 border-t border-slate-100 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-700">背景圖（選填，覆蓋在色彩上）</span>
+              <button type="button" id="clearBg" class="hidden text-[11px] text-rose-600 hover:underline">移除</button>
+            </div>
+            <label id="bgDrop" class="flex flex-col items-center justify-center gap-1 h-20 border-2 border-dashed border-slate-200 rounded-xl text-xs text-slate-500 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/40 transition overflow-hidden relative">
+              <img id="bgThumb" class="hidden absolute inset-0 w-full h-full object-cover opacity-60" alt="">
+              <span class="relative">點擊或拖曳上傳背景圖</span>
+              <input type="file" id="bgFile" accept="image/*" class="hidden">
+            </label>
+            <div id="bgControls" class="hidden space-y-2">
+              <div>
+                <div class="flex justify-between text-[11px] text-slate-500"><span>縮放</span><span id="bgScaleVal">100%</span></div>
+                <input type="range" id="bgScale" min="100" max="250" value="100" class="w-full">
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <div class="flex justify-between text-[11px] text-slate-500"><span>水平位置</span></div>
+                  <input type="range" id="bgX" min="0" max="100" value="50" class="w-full">
+                </div>
+                <div>
+                  <div class="flex justify-between text-[11px] text-slate-500"><span>垂直位置</span></div>
+                  <input type="range" id="bgY" min="0" max="100" value="50" class="w-full">
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-[11px] text-slate-500"><span>模糊</span><span id="bgBlurVal">0px</span></div>
+                <input type="range" id="bgBlur" min="0" max="30" value="0" class="w-full">
+              </div>
+              <div>
+                <div class="flex justify-between text-[11px] text-slate-500"><span>暗化遮罩（讓 Logo 更清楚）</span><span id="bgDimVal">0%</span></div>
+                <input type="range" id="bgDim" min="0" max="80" value="0" class="w-full">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Logo -->
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+            <h2 class="text-sm font-bold text-slate-900">⭐ Logo（置中正方形）</h2>
+            <button type="button" id="clearLogo" class="hidden text-[11px] text-rose-600 hover:underline">移除</button>
+          </div>
+
+          <label id="logoDrop" class="flex flex-col items-center justify-center gap-1 h-24 border-2 border-dashed border-slate-200 rounded-xl text-xs text-slate-500 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/40 transition checker">
+            <img id="logoThumb" class="hidden max-h-16 max-w-[80%] object-contain" alt="">
+            <span id="logoHint">點擊或拖曳上傳 Logo（建議透明 PNG / SVG）</span>
+            <input type="file" id="logoFile" accept="image/*,.svg" class="hidden">
+          </label>
+
+          <div class="space-y-2.5">
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-500"><span>正方形大小（佔圖高）</span><span id="boxSizeVal">70%</span></div>
+              <input type="range" id="boxSize" min="30" max="100" value="70" class="w-full">
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-500"><span>Logo 縮放（100% = 剛好符合框）</span><span id="logoScaleVal">80%</span></div>
+              <input type="range" id="logoScale" min="10" max="100" value="80" class="w-full">
+            </div>
+
+            <div class="pt-2 border-t border-slate-100 space-y-2">
+              <label class="flex items-center gap-2 text-xs font-semibold text-slate-700 select-none cursor-pointer">
+                <input type="checkbox" id="boxFill" class="accent-indigo-600"> 正方形底色
+              </label>
+              <div id="boxFillControls" class="hidden space-y-2">
+                <div class="flex items-center gap-2">
+                  <input type="color" id="boxColor" class="w-10 h-9 rounded-lg border border-slate-200 cursor-pointer p-0.5 bg-white">
+                  <div class="flex-1">
+                    <div class="flex justify-between text-[11px] text-slate-500"><span>不透明度</span><span id="boxAlphaVal">100%</span></div>
+                    <input type="range" id="boxAlpha" min="0" max="100" value="100" class="w-full">
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-[11px] text-slate-500"><span>圓角</span><span id="boxRadiusVal">8%</span></div>
+                  <input type="range" id="boxRadius" min="0" max="50" value="8" class="w-full">
+                </div>
+                <label class="flex items-center gap-2 text-[11px] text-slate-600 select-none cursor-pointer">
+                  <input type="checkbox" id="boxShadow" checked class="accent-indigo-600"> 陰影
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 輸出 -->
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-3">
+          <h2 class="text-sm font-bold text-slate-900 pb-2 border-b border-slate-100">💾 輸出</h2>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="space-y-1">
+              <label for="fileName" class="text-[11px] font-medium text-slate-600">檔名</label>
+              <input type="text" id="fileName" value="og" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+            </div>
+            <div class="space-y-1">
+              <label for="fileType" class="text-[11px] font-medium text-slate-600">格式</label>
+              <select id="fileType" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                <option value="png">PNG（最清晰）</option>
+                <option value="jpg">JPG（檔案較小）</option>
+              </select>
+            </div>
+          </div>
+          <button id="downloadBtn" type="button" class="w-full py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-all flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            <span id="downloadLabel">下載 og.png</span>
+          </button>
+          <p id="sizeInfo" class="text-[11px] text-slate-400 text-center">1200 × 630</p>
+          <div class="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200/70 leading-relaxed">
+            💡 上傳到網站根目錄後，og:image 填 <code class="text-indigo-600">https://網域/og.png</code>，寬高填 1200 / 630。FB 有快取，換圖後記得到「分享偵錯工具」重新抓取。
+          </div>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-xl text-xs font-medium transition-all duration-300 opacity-0 translate-y-4 pointer-events-none flex items-center gap-2 z-50">
+    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+    <span id="toastMsg"></span>
+  </div>
+
+  <script>
+    const W = 1200, H = 630;
+    const $ = id => document.getElementById(id);
+    const canvas = $('canvas'), ctx = canvas.getContext('2d');
+    const guide = $('guide'), gctx = guide.getContext('2d');
+
+    const defaults = {
+      bgMode: 'color', bgColor: '#1e293b', bgColor2: '#4f46e5',
+      bgScale: 100, bgX: 50, bgY: 50, bgBlur: 0, bgDim: 0,
+      boxSize: 70, logoScale: 80,
+      boxFill: false, boxColor: '#ffffff', boxAlpha: 100, boxRadius: 8, boxShadow: true,
+      fileName: 'og', fileType: 'png'
+    };
+    let s = { ...defaults };
+    let bgImg = null, logoImg = null;
+
+    const SWATCHES = ['#ffffff', '#f8fafc', '#0f172a', '#1e293b', '#000000', '#7c2d12', '#a16207', '#b8975a', '#14532d', '#1e3a8a', '#4f46e5', '#9f1239'];
+
+    // ---------- 繪製 ----------
+    function roundRect(c, x, y, w, h, r) {
+      r = Math.min(r, w / 2, h / 2);
+      c.beginPath();
+      c.moveTo(x + r, y);
+      c.arcTo(x + w, y, x + w, y + h, r);
+      c.arcTo(x + w, y + h, x, y + h, r);
+      c.arcTo(x, y + h, x, y, r);
+      c.arcTo(x, y, x + w, y, r);
+      c.closePath();
+    }
+
+    function hexToRgba(hex, a) {
+      const n = parseInt(hex.replace('#', ''), 16);
+      return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+
+      // 1. 底色 / 漸層
+      if (s.bgMode === 'gradient') {
+        const g = ctx.createLinearGradient(0, 0, W, H);
+        g.addColorStop(0, s.bgColor);
+        g.addColorStop(1, s.bgColor2);
+        ctx.fillStyle = g;
+      } else {
+        ctx.fillStyle = s.bgColor;
+      }
+      ctx.fillRect(0, 0, W, H);
+
+      // 2. 背景圖 (cover + 縮放 + 位置)
+      if (bgImg) {
+        const base = Math.max(W / bgImg.width, H / bgImg.height);
+        const sc = base * (s.bgScale / 100);
+        const dw = bgImg.width * sc, dh = bgImg.height * sc;
+        const dx = (W - dw) * (s.bgX / 100);
+        const dy = (H - dh) * (s.bgY / 100);
+        ctx.save();
+        if (s.bgBlur > 0) {
+          ctx.filter = `blur(${s.bgBlur}px)`;
+          // 模糊時稍微放大，避免邊緣透出底色
+          const pad = s.bgBlur * 2;
+          ctx.drawImage(bgImg, dx - pad, dy - pad, dw + pad * 2, dh + pad * 2);
+        } else {
+          ctx.drawImage(bgImg, dx, dy, dw, dh);
+        }
+        ctx.restore();
+        if (s.bgDim > 0) {
+          ctx.fillStyle = `rgba(0,0,0,${s.bgDim / 100})`;
+          ctx.fillRect(0, 0, W, H);
+        }
+      }
+
+      // 3. 正方形
+      const box = Math.round(H * s.boxSize / 100);
+      const bx = (W - box) / 2, by = (H - box) / 2;
+
+      if (s.boxFill) {
+        ctx.save();
+        if (s.boxShadow) {
+          ctx.shadowColor = 'rgba(0,0,0,0.28)';
+          ctx.shadowBlur = 40;
+          ctx.shadowOffsetY = 12;
+        }
+        ctx.fillStyle = hexToRgba(s.boxColor, s.boxAlpha / 100);
+        roundRect(ctx, bx, by, box, box, box * s.boxRadius / 100);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // 4. Logo (contain 置中於正方形內)
+      if (logoImg) {
+        // 先等比縮到剛好塞進正方形 (contain)，再依縮放比例只往內縮
+        const inner = box * Math.min(s.logoScale, 100) / 100;
+        const lw = logoImg.naturalWidth || logoImg.width || inner;
+        const lh = logoImg.naturalHeight || logoImg.height || inner;
+        const sc = Math.min(inner / lw, inner / lh);
+        const dw = lw * sc, dh = lh * sc;
+        ctx.drawImage(logoImg, bx + (box - dw) / 2, by + (box - dh) / 2, dw, dh);
+      }
+
+      drawGuide(bx, by, box);
+      updateCards();
+    }
+
+    function drawGuide(bx, by, box) {
+      gctx.clearRect(0, 0, W, H);
+      if (!$('showGuide').checked) return;
+      gctx.save();
+      gctx.setLineDash([10, 8]);
+      gctx.lineWidth = 2;
+      // 正方形範圍
+      gctx.strokeStyle = 'rgba(99,102,241,0.9)';
+      gctx.strokeRect(bx, by, box, box);
+      // 中央方形安全區 (630x630)
+      gctx.strokeStyle = 'rgba(244,63,94,0.7)';
+      gctx.strokeRect((W - H) / 2, 1, H, H - 2);
+      gctx.restore();
+      gctx.fillStyle = 'rgba(244,63,94,0.85)';
+      gctx.font = '600 18px Inter, sans-serif';
+      gctx.fillText('方形縮圖安全區', (W - H) / 2 + 10, 26);
+    }
+
+    let cardTimer;
+    function updateCards() {
+      clearTimeout(cardTimer);
+      cardTimer = setTimeout(() => {
+        const url = canvas.toDataURL('image/jpeg', 0.7);
+        $('cardImgA').src = url;
+        $('cardImgB').src = url;
+      }, 120);
+    }
+
+    // ---------- 圖片載入 ----------
+    // SVG：補上 viewBox 並預先點陣化成高解析 canvas，避免無 viewBox 的 SVG 縮放失效而爆框
+    async function loadSvg(file) {
+      const text = await file.text();
+      const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+      const svg = doc.documentElement;
+      if (!svg || svg.nodeName.toLowerCase() !== 'svg') throw new Error('SVG 格式錯誤');
+
+      let vb = (svg.getAttribute('viewBox') || '').trim().split(/[\s,]+/).map(Number);
+      let w = parseFloat(svg.getAttribute('width'));
+      let h = parseFloat(svg.getAttribute('height'));
+      if (vb.length !== 4 || vb.some(isNaN)) {
+        if (!w || !h) { w = 1000; h = 1000; }
+        vb = [0, 0, w, h];
+        svg.setAttribute('viewBox', vb.join(' '));
+      }
+      const ratio = vb[2] / vb[3];
+      // 以長邊 2400px 輸出，確保放大後依然銳利
+      const LONG = 2400;
+      const rw = ratio >= 1 ? LONG : Math.round(LONG * ratio);
+      const rh = ratio >= 1 ? Math.round(LONG / ratio) : LONG;
+      svg.setAttribute('width', rw);
+      svg.setAttribute('height', rh);
+      svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+      const fixed = new XMLSerializer().serializeToString(svg);
+      const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(fixed);
+      const img = await new Promise((res, rej) => {
+        const i = new Image();
+        i.onload = () => res(i);
+        i.onerror = () => rej(new Error('SVG 讀取失敗'));
+        i.src = url;
+      });
+      const c = document.createElement('canvas');
+      c.width = rw; c.height = rh;
+      c.getContext('2d').drawImage(img, 0, 0, rw, rh);
+      return { img: c, url };
+    }
+
+    function loadImage(file) {
+      if (file && (file.type === 'image/svg+xml' || /\.svg$/i.test(file.name || ''))) {
+        return loadSvg(file);
+      }
+      return new Promise((resolve, reject) => {
+        if (!file || !file.type.startsWith('image/')) {
+          reject(new Error('不是圖片檔')); return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => {
+            // SVG 沒有固有尺寸時給預設值
+            if (!img.naturalWidth) { img.width = 1000; img.height = 1000; }
+            resolve({ img, url: reader.result });
+          };
+          img.onerror = () => reject(new Error('圖片讀取失敗'));
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function setBg(file) {
+      try {
+        const { img, url } = await loadImage(file);
+        bgImg = img;
+        $('bgThumb').src = url; $('bgThumb').classList.remove('hidden');
+        $('bgControls').classList.remove('hidden');
+        $('clearBg').classList.remove('hidden');
+        draw();
+      } catch (e) { toast(e.message); }
+    }
+
+    async function setLogo(file) {
+      try {
+        const { img, url } = await loadImage(file);
+        logoImg = img;
+        $('logoThumb').src = url; $('logoThumb').classList.remove('hidden');
+        $('logoHint').classList.add('hidden');
+        $('clearLogo').classList.remove('hidden');
+        draw();
+      } catch (e) { toast(e.message); }
+    }
+
+    $('bgFile').addEventListener('change', e => { setBg(e.target.files[0]); e.target.value = ''; });
+    $('logoFile').addEventListener('change', e => { setLogo(e.target.files[0]); e.target.value = ''; });
+
+    $('clearBg').addEventListener('click', () => {
+      bgImg = null;
+      $('bgThumb').classList.add('hidden');
+      $('bgControls').classList.add('hidden');
+      $('clearBg').classList.add('hidden');
+      draw();
+    });
+    $('clearLogo').addEventListener('click', () => {
+      logoImg = null;
+      $('logoThumb').classList.add('hidden');
+      $('logoHint').classList.remove('hidden');
+      $('clearLogo').classList.add('hidden');
+      draw();
+    });
+
+    // 拖曳上傳
+    function bindDrop(el, handler) {
+      el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('drop-active'); });
+      el.addEventListener('dragleave', () => el.classList.remove('drop-active'));
+      el.addEventListener('drop', e => {
+        e.preventDefault(); el.classList.remove('drop-active');
+        const f = e.dataTransfer.files[0];
+        if (f) handler(f, e);
+      });
+    }
+    bindDrop($('bgDrop'), f => setBg(f));
+    bindDrop($('logoDrop'), f => setLogo(f));
+    bindDrop($('stage'), (f, e) => {
+      // 依落點判斷：落在正方形內 → Logo，否則 → 背景
+      const r = $('stage').getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width * W;
+      const y = (e.clientY - r.top) / r.height * H;
+      const box = H * s.boxSize / 100;
+      const inBox = Math.abs(x - W / 2) <= box / 2 && Math.abs(y - H / 2) <= box / 2;
+      inBox ? setLogo(f) : setBg(f);
+    });
+
+    // 貼上 (Ctrl+V) 直接當 Logo
+    document.addEventListener('paste', e => {
+      const item = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith('image/'));
+      if (item) { setLogo(item.getAsFile()); toast('已從剪貼簿貼上為 Logo'); }
+    });
+
+    // ---------- 控制項綁定 ----------
+    const ranges = [
+      ['bgScale', v => v + '%'], ['bgBlur', v => v + 'px'], ['bgDim', v => v + '%'],
+      ['bgX', null], ['bgY', null],
+      ['boxSize', v => v + '%'], ['logoScale', v => v + '%'],
+      ['boxAlpha', v => v + '%'], ['boxRadius', v => v + '%']
+    ];
+    ranges.forEach(([key, fmt]) => {
+      $(key).addEventListener('input', e => {
+        s[key] = +e.target.value;
+        if (fmt) $(key + 'Val').textContent = fmt(s[key]);
+        draw();
+      });
+    });
+
+    $('bgColor').addEventListener('input', e => { s.bgColor = e.target.value; $('bgColorHex').value = s.bgColor; draw(); });
+    $('bgColorHex').addEventListener('input', e => {
+      let v = e.target.value.trim();
+      if (!v.startsWith('#')) v = '#' + v;
+      if (/^#[0-9a-fA-F]{6}$/.test(v)) { s.bgColor = v.toLowerCase(); $('bgColor').value = s.bgColor; draw(); }
+    });
+    $('bgColor2').addEventListener('input', e => { s.bgColor2 = e.target.value; draw(); });
+    $('boxColor').addEventListener('input', e => { s.boxColor = e.target.value; draw(); });
+
+    $('boxFill').addEventListener('change', e => {
+      s.boxFill = e.target.checked;
+      $('boxFillControls').classList.toggle('hidden', !s.boxFill);
+      draw();
+    });
+    $('boxShadow').addEventListener('change', e => { s.boxShadow = e.target.checked; draw(); });
+    $('showGuide').addEventListener('change', draw);
+
+    document.querySelectorAll('.bg-tab').forEach(btn => {
+      btn.addEventListener('click', () => { s.bgMode = btn.dataset.bg; syncTabs(); draw(); });
+    });
+    function syncTabs() {
+      document.querySelectorAll('.bg-tab').forEach(b => {
+        const on = b.dataset.bg === s.bgMode;
+        b.className = 'bg-tab py-1.5 rounded-md transition ' + (on ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700');
+      });
+      $('bgColor2').parentElement.classList.toggle('hidden', s.bgMode !== 'gradient');
+    }
+
+    // 色票
+    SWATCHES.forEach(c => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.title = c;
+      b.className = 'w-6 h-6 rounded-md border border-slate-300 hover:scale-110 transition-transform';
+      b.style.background = c;
+      b.addEventListener('click', () => {
+        s.bgColor = c; $('bgColor').value = c; $('bgColorHex').value = c; draw();
+      });
+      $('swatches').appendChild(b);
+    });
+
+    // 輸出設定
+    function syncDownloadLabel() {
+      const name = (s.fileName || 'og').trim() || 'og';
+      $('downloadLabel').textContent = `下載 ${name}.${s.fileType}`;
+      $('downloadTopBtn').lastChild.textContent = ` 下載 ${name}.${s.fileType}`;
+    }
+    $('fileName').addEventListener('input', e => { s.fileName = e.target.value.replace(/[\\/:*?"<>|]/g, ''); syncDownloadLabel(); });
+    $('fileType').addEventListener('change', e => { s.fileType = e.target.value; syncDownloadLabel(); });
+
+    function download() {
+      const name = ((s.fileName || 'og').trim() || 'og') + '.' + s.fileType;
+      const mime = s.fileType === 'jpg' ? 'image/jpeg' : 'image/png';
+      canvas.toBlob(blob => {
+        if (!blob) { toast('輸出失敗'); return; }
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        $('sizeInfo').textContent = `1200 × 630 · ${(blob.size / 1024).toFixed(0)} KB`;
+        toast(`已下載 ${name}`);
+      }, mime, 0.92);
+    }
+    $('downloadBtn').addEventListener('click', download);
+    $('downloadTopBtn').addEventListener('click', download);
+
+    // 重設
+    function applyState() {
+      $('bgColor').value = s.bgColor; $('bgColorHex').value = s.bgColor; $('bgColor2').value = s.bgColor2;
+      $('boxColor').value = s.boxColor;
+      ranges.forEach(([key, fmt]) => { $(key).value = s[key]; if (fmt) $(key + 'Val').textContent = fmt(s[key]); });
+      $('boxFill').checked = s.boxFill; $('boxFillControls').classList.toggle('hidden', !s.boxFill);
+      $('boxShadow').checked = s.boxShadow;
+      $('fileName').value = s.fileName; $('fileType').value = s.fileType;
+      syncTabs(); syncDownloadLabel(); draw();
+    }
+    $('resetBtn').addEventListener('click', () => {
+      s = { ...defaults };
+      $('clearBg').click(); $('clearLogo').click();
+      applyState();
+      toast('已重設');
+    });
+
+    function toast(msg) {
+      const t = $('toast');
+      $('toastMsg').textContent = msg;
+      t.classList.remove('opacity-0', 'translate-y-4');
+      clearTimeout(t._h);
+      t._h = setTimeout(() => t.classList.add('opacity-0', 'translate-y-4'), 2200);
+    }
+
+    applyState();
+  </script>
+</body>
+</html>

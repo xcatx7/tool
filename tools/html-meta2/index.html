@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SEO & OG Meta 標籤快速生成工具</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & Noto Sans TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', 'Noto Sans TC', sans-serif;
+    }
+    /* 自訂捲軸樣式 */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+  <!-- 頂部導覽列 -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center space-x-3">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-indigo-600 text-white font-bold text-lg shadow-sm">
+          #
+        </span>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 tracking-tight">Meta 標籤生成與社群預覽工具</h1>
+          <p class="text-xs text-slate-500">免打包、純靜態替換必備工具（支援 LINE / FB 預覽卡片）</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="resetBtn" type="button" class="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200">
+          清空
+        </button>
+        <button id="copyTopBtn" type="button" class="px-3.5 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-all flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          一鍵複製 HTML
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+
+    <!-- 主工作區：雙欄架構 -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- 左側：原始設定物件區塊 (5欄) -->
+      <section class="lg:col-span-5 flex flex-col bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-3">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+          <div>
+            <h2 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+              <span>📝</span> 快速鍵值設定區 (JS / Key-Value)
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">直接貼上原本 PHP 或 JS 陣列物件，即時雙向解析</p>
+          </div>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+            雙向即時連動
+          </span>
+        </div>
+
+        <div class="flex-1 flex flex-col">
+          <textarea id="rawInput" spellcheck="false" rows="18"
+            class="w-full flex-1 p-3.5 font-mono text-xs bg-slate-900 text-white placeholder:text-slate-500 rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 leading-relaxed resize-y selection:bg-indigo-600"
+            placeholder="請貼上如：&#10;src: 'https://fudu.tw/',&#10;title: '網站標題',&#10;description: '網站簡介',&#10;keyword: '關鍵字1, 關鍵字2',&#10;image: 'https://.../og.png'"></textarea>
+        </div>
+
+        <div class="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200/70">
+          💡 <strong>支援語法格式：</strong>支援一般 JavaScript 物件鍵值、PHP 關聯陣列 (`'key' => 'val'`) 或純 `key: value` 格式，編輯右側個別欄位時會自動反向寫回此區塊。
+        </div>
+      </section>
+
+      <!-- 右側：獨立欄位編輯與增補設定 (7欄) -->
+      <section class="lg:col-span-7 flex flex-col bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-4">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+          <div>
+            <h2 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+              <span>⚙️</span> 個別項目微調
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">單獨修改各欄位，立即同步左側設定與下方程式碼</p>
+          </div>
+          <span class="text-xs text-indigo-600 font-medium">即時驗證長度</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Title -->
+          <div class="md:col-span-2 space-y-1">
+            <div class="flex justify-between items-center text-xs">
+              <label for="f_title" class="font-semibold text-slate-700">網頁標題 (Title / og:title)</label>
+              <span id="titleCount" class="text-slate-400">0 字 (建議 30-60 字)</span>
+            </div>
+            <input type="text" id="f_title" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
+          </div>
+
+          <!-- Description -->
+          <div class="md:col-span-2 space-y-1">
+            <div class="flex justify-between items-center text-xs">
+              <label for="f_description" class="font-semibold text-slate-700">網頁簡介 (Description / og:description)</label>
+              <span id="descCount" class="text-slate-400">0 字 (建議 80-160 字)</span>
+            </div>
+            <textarea id="f_description" rows="2" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors resize-none"></textarea>
+          </div>
+
+          <!-- Keywords -->
+          <div class="space-y-1">
+            <label for="f_keyword" class="text-xs font-semibold text-slate-700">關鍵字 (Keywords)</label>
+            <input type="text" id="f_keyword" placeholder="以逗號分隔，例如：房地產,預售屋" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
+          </div>
+
+          <!-- Canonical URL / src -->
+          <div class="space-y-1">
+            <label for="f_src" class="text-xs font-semibold text-slate-700">正式標準網址 (Canonical / og:url)</label>
+            <input type="url" id="f_src" placeholder="https://fudu.tw/" class="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
+          </div>
+
+          <!-- OG Image -->
+          <div class="md:col-span-2 space-y-1">
+            <label for="f_image" class="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+              <span>社群分享圖網址 (og:image)</span>
+              <span class="text-[11px] font-normal text-amber-600 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200/60">重要！社群必備</span>
+            </label>
+            <div class="flex gap-2">
+              <input type="url" id="f_image" placeholder="https://next-ziyuan.tw/og.png (需包含完整 https://)" class="flex-1 min-w-0 px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
+              <a href="og-generator.html" target="_blank" rel="noopener" class="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors" title="開啟 OG 圖片產生器">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                製作 OG 圖
+              </a>
+            </div>
+            <p class="text-[11px] text-slate-400">產出 og.png 後上傳到網站根目錄，再把完整網址填回這裡</p>
+          </div>
+        </div>
+
+        <!-- 進階補充欄位 (折疊開關) -->
+        <div class="pt-2 border-t border-slate-100">
+          <details class="group">
+            <summary class="flex items-center justify-between cursor-pointer text-xs font-semibold text-slate-700 hover:text-indigo-600 select-none py-1">
+              <span class="flex items-center gap-1.5">
+                <svg class="w-4 h-4 transition-transform group-open:rotate-90 text-slate-400 group-hover:text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                查看 / 編輯推薦補充的 Meta 欄位 (圖片尺寸、作者、Robots 等)
+              </span>
+              <span class="text-[11px] font-normal text-slate-400 group-open:hidden">點擊展開</span>
+            </summary>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 mt-3 pt-2">
+              <div class="space-y-1">
+                <label for="f_imageWidth" class="text-xs font-medium text-slate-600">圖片寬度 (og:image:width)</label>
+                <input type="text" id="f_imageWidth" placeholder="1200" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
+              </div>
+
+              <div class="space-y-1">
+                <label for="f_imageHeight" class="text-xs font-medium text-slate-600">圖片高度 (og:image:height)</label>
+                <input type="text" id="f_imageHeight" placeholder="630" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
+              </div>
+
+              <div class="space-y-1">
+                <label for="f_imageAlt" class="text-xs font-medium text-slate-600">圖片描述 (og:image:alt)</label>
+                <input type="text" id="f_imageAlt" placeholder="昌益・富都心四季外觀示意圖" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
+              </div>
+
+              <div class="space-y-1">
+                <label for="f_siteName" class="text-xs font-medium text-slate-600">品牌 / 站台名稱 (og:site_name)</label>
+                <input type="text" id="f_siteName" placeholder="昌益・富都心四季" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
+              </div>
+
+              <div class="space-y-1">
+                <label for="f_author" class="text-xs font-medium text-slate-600">作者 / 品牌 (author)</label>
+                <input type="text" id="f_author" placeholder="昌益建設" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
+              </div>
+
+              <div class="space-y-1">
+                <label for="f_robots" class="text-xs font-medium text-slate-600">搜尋引擎索引 (robots)</label>
+                <select id="f_robots" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                  <option value="">未指定 (預設遵循 index, follow)</option>
+                  <option value="index, follow">index, follow (收錄並追蹤)</option>
+                  <option value="noindex, follow">noindex, follow (不收錄但追蹤連結)</option>
+                  <option value="noindex, nofollow">noindex, nofollow (完全阻擋搜尋引擎)</option>
+                </select>
+              </div>
+            </div>
+          </details>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- 社交平台卡片即時模擬預覽 (LINE / Facebook) -->
+    <section class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-4">
+      <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+        <div>
+          <h2 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+            <span>📱</span> LINE / Facebook 實機社群分享預覽
+          </h2>
+          <p class="text-xs text-slate-500">當使用者在 LINE 聊天室或 FB 貼文貼上連結時，機器人爬取的卡片視覺呈現</p>
+        </div>
+        <span class="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded">即時渲染</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        
+        <!-- LINE 預覽小卡 -->
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#06C755]"></span>
+            <span class="text-xs font-bold text-slate-700">LINE 訊息預覽效果</span>
+          </div>
+          <div class="bg-[#788eab]/15 p-4 rounded-xl flex justify-center">
+            <div class="w-full max-w-xs bg-white rounded-xl overflow-hidden shadow-md border border-slate-200/80">
+              <div class="relative w-full aspect-[1.91/1] bg-slate-200 overflow-hidden">
+                <img id="previewImgLine" src="" alt="預覽圖" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/600x314/e2e8f0/64748b?text=No+Image+Provided';">
+              </div>
+              <div class="p-3 space-y-1">
+                <p id="previewTitleLine" class="text-xs font-bold text-slate-900 line-clamp-2 leading-snug">載入中...</p>
+                <p id="previewDescLine" class="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">載入中...</p>
+                <p id="previewUrlLine" class="text-[10px] text-slate-400 truncate pt-1">example.com</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Facebook 預覽小卡 -->
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#1877F2]"></span>
+            <span class="text-xs font-bold text-slate-700">Facebook 動態消息預覽效果</span>
+          </div>
+          <div class="bg-slate-100 p-4 rounded-xl flex justify-center">
+            <div class="w-full max-w-sm bg-white rounded-lg overflow-hidden shadow-sm border border-slate-300">
+              <div class="relative w-full aspect-[1.91/1] bg-slate-200 overflow-hidden">
+                <img id="previewImgFb" src="" alt="預覽圖" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/1200x630/e2e8f0/64748b?text=OG+Image+Preview';">
+              </div>
+              <div class="p-3 bg-[#F0F2F5] border-t border-slate-200 space-y-0.5">
+                <p id="previewDomainFb" class="text-[11px] uppercase text-slate-500 font-normal truncate">EXAMPLE.COM</p>
+                <p id="previewTitleFb" class="text-xs font-bold text-slate-900 line-clamp-1 leading-snug">載入中...</p>
+                <p id="previewDescFb" class="text-[11px] text-slate-600 line-clamp-1">載入中...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 輸出區：生成之純 HTML 標籤 -->
+    <section class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-2 border-b border-slate-100">
+        <div>
+          <h2 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+            <span>💻</span> 生成的純 HTML 標籤（直接貼進 index.html 即可）
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">免打包！直接複製這段程式碼替換原本 `index.html` 的 `<head>` 內容，LINE/FB 爬蟲 100% 抓得到</p>
+        </div>
+        <button id="copyBottomBtn" type="button" class="px-4 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-all flex items-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+          複製這段 HTML
+        </button>
+      </div>
+
+      <div class="relative">
+        <pre class="bg-slate-950 text-slate-200 p-4 rounded-xl text-xs font-mono overflow-x-auto leading-relaxed border border-slate-800 max-h-96 selection:bg-indigo-700"><code id="codeOutput"></code></pre>
+      </div>
+    </section>
+
+    <!-- Meta 標籤推薦補充說明清單 -->
+    <section class="bg-indigo-50/60 rounded-2xl border border-indigo-100 p-5 space-y-3">
+      <h3 class="text-sm font-bold text-indigo-950 flex items-center gap-1.5">
+        <span>💡</span> 專業建議：您的 Meta 還能補充哪些重要欄位？
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 text-xs text-slate-700">
+        <div class="p-3 bg-white rounded-xl border border-indigo-100 shadow-2xs space-y-1">
+          <span class="font-bold text-indigo-600">1. og:image:width & height</span>
+          <p class="text-slate-600">填入 <code>1200</code> 與 <code>630</code>。能提示 FB / LINE 提前配置版面尺寸，<strong>大幅避免第一次分享時圖片縮圖出不來的問題</strong>。</p>
+        </div>
+        <div class="p-3 bg-white rounded-xl border border-indigo-100 shadow-2xs space-y-1">
+          <span class="font-bold text-indigo-600">2. twitter:image</span>
+          <p class="text-slate-600">配合 <code>summary_large_image</code>，Twitter / X 或部分現代社群預覽會優先抓取此項。</p>
+        </div>
+        <div class="p-3 bg-white rounded-xl border border-indigo-100 shadow-2xs space-y-1">
+          <span class="font-bold text-indigo-600">3. og:image:alt</span>
+          <p class="text-slate-600">分享圖的替代文字。加強 SEO 無障礙友好度與搜尋權重。</p>
+        </div>
+        <div class="p-3 bg-white rounded-xl border border-indigo-100 shadow-2xs space-y-1">
+          <span class="font-bold text-indigo-600">4. og:site_name</span>
+          <p class="text-slate-600">網站所屬品牌名稱，避免搜尋引擎將頁面標題與品牌混淆。</p>
+        </div>
+        <div class="p-3 bg-white rounded-xl border border-indigo-100 shadow-2xs space-y-1">
+          <span class="font-bold text-indigo-600">5. robots</span>
+          <p class="text-slate-600">設定 <code>index, follow</code> 明確告訴 Google 爬蟲安心收錄並索引子連結。</p>
+        </div>
+        <div class="p-3 bg-white rounded-xl border border-indigo-100 shadow-2xs space-y-1">
+          <span class="font-bold text-indigo-600">6. author / 版權標籤</span>
+          <p class="text-slate-600">標示建商或代理品牌名稱，強化 Google Knowledge Graph 知識圖譜關聯度。</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 提示訊息 Toast 浮水印 -->
+  <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-xl text-xs font-medium transform transition-all duration-300 opacity-0 translate-y-4 pointer-events-none flex items-center gap-2 z-50">
+    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+    <span id="toastMsg">已複製至剪貼簿！</span>
+  </div>
+
+  <script>
+    // 預設資料：核心欄位保留，補充欄位與圖片皆預設為空
+    const defaultData = {
+      src: '',
+      title: '',
+      description: '',
+      keyword: '',
+      image: '',
+      imageWidth: '',
+      imageHeight: '',
+      imageAlt: '',
+      siteName: '',
+      author: '',
+      robots: ''
+    };
+
+    let state = { ...defaultData };
+    let isUpdatingFromRaw = false;
+    let isUpdatingFromFields = false;
+
+    // DOM 元素快取
+    const rawInput = document.getElementById('rawInput');
+    const f_title = document.getElementById('f_title');
+    const f_description = document.getElementById('f_description');
+    const f_keyword = document.getElementById('f_keyword');
+    const f_src = document.getElementById('f_src');
+    const f_image = document.getElementById('f_image');
+    const f_imageWidth = document.getElementById('f_imageWidth');
+    const f_imageHeight = document.getElementById('f_imageHeight');
+    const f_imageAlt = document.getElementById('f_imageAlt');
+    const f_siteName = document.getElementById('f_siteName');
+    const f_author = document.getElementById('f_author');
+    const f_robots = document.getElementById('f_robots');
+
+    const titleCount = document.getElementById('titleCount');
+    const descCount = document.getElementById('descCount');
+
+    const previewImgLine = document.getElementById('previewImgLine');
+    const previewTitleLine = document.getElementById('previewTitleLine');
+    const previewDescLine = document.getElementById('previewDescLine');
+    const previewUrlLine = document.getElementById('previewUrlLine');
+
+    const previewImgFb = document.getElementById('previewImgFb');
+    const previewTitleFb = document.getElementById('previewTitleFb');
+    const previewDescFb = document.getElementById('previewDescFb');
+    const previewDomainFb = document.getElementById('previewDomainFb');
+
+    const codeOutput = document.getElementById('codeOutput');
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMsg');
+
+    // 格式化為設定鍵值註解或文字
+    function buildConfigBlock(s) {
+      const lines = [];
+      if (s.src) lines.push(`src: '${s.src}',`);
+      if (s.title) lines.push(`title: '${s.title}',`);
+      if (s.description) lines.push(`description: '${s.description}',`);
+      if (s.keyword) lines.push(`keyword: '${s.keyword}',`);
+
+      // 補充欄位：有填寫才輸出
+      if (s.image) lines.push(`image: '${s.image}',`);
+      if (s.image && s.imageWidth) lines.push(`imageWidth: '${s.imageWidth}',`);
+      if (s.image && s.imageHeight) lines.push(`imageHeight: '${s.imageHeight}',`);
+      if (s.image && s.imageAlt) lines.push(`imageAlt: '${s.imageAlt}',`);
+      if (s.siteName) lines.push(`siteName: '${s.siteName}',`);
+      if (s.author) lines.push(`author: '${s.author}',`);
+      if (s.robots) lines.push(`robots: '${s.robots}',`);
+
+      return lines.join('\n');
+    }
+
+    // 格式化將 state 轉為左側文字區塊文字
+    function stateToRawText(s) {
+      return buildConfigBlock(s);
+    }
+
+    // 解析左側輸入框字串（支援註解、PHP 'key' => 'val'、JS key: 'val'、HTML 註解 <!-- -->）
+    function parseRawInput(text) {
+      const parsed = {
+        src: '',
+        title: '',
+        description: '',
+        keyword: '',
+        image: '',
+        imageWidth: '',
+        imageHeight: '',
+        imageAlt: '',
+        siteName: '',
+        author: '',
+        robots: ''
+      };
+      
+      // 去除 <!-- 與 --> 標籤包裹
+      const cleanText = text.replace(/<!--/g, '').replace(/-->/g, '');
+      const lines = cleanText.split('\n');
+
+      for (let line of lines) {
+        line = line.trim();
+        if (!line || line.startsWith('//') || line.startsWith('#') || line.startsWith('/*')) continue;
+
+        // 支援 key => val 或 key: val
+        const match = line.match(/['"]?([a-zA-Z0-9_]+)['"]?\s*(?:=>|:)\s*['"]?(.*?)['"]?,?\s*$/);
+        if (match) {
+          const key = match[1];
+          let val = match[2];
+          // 清理尾隨單引號/雙引號與逗號
+          val = val.replace(/^['"]|['"]$/g, '').trim();
+
+          // 鍵名 alias 正規化
+          if (key === 'keywords') parsed.keyword = val;
+          else if (key === 'url') parsed.src = val;
+          else if (key === 'ogImage' || key === 'og_image') parsed.image = val;
+          else if (key === 'image_width') parsed.imageWidth = val;
+          else if (key === 'image_height') parsed.imageHeight = val;
+          else if (key === 'image_alt') parsed.imageAlt = val;
+          else if (key === 'ogSiteName' || key === 'site_name') parsed.siteName = val;
+          else if (parsed.hasOwnProperty(key)) {
+            parsed[key] = val;
+          }
+        }
+      }
+      return parsed;
+    }
+
+    // 產生 HTML 字串 (包含頂部設定註解與條件判斷)
+    function generateHtml(s) {
+      const title = s.title || '';
+      const desc = s.description || '';
+      const kw = s.keyword || '';
+      const url = s.src || '';
+      const img = s.image ? s.image.trim() : '';
+      const siteName = s.siteName ? s.siteName.trim() : title;
+      const imgWidth = s.imageWidth ? s.imageWidth.trim() : '1200';
+      const imgHeight = s.imageHeight ? s.imageHeight.trim() : '630';
+      const imgAlt = s.imageAlt ? s.imageAlt.trim() : '';
+      const author = s.author ? s.author.trim() : '';
+      const robots = s.robots ? s.robots.trim() : '';
+
+      // 1. 產生頂部設定註解 (方便日後直接整塊複製回本工具修改)
+      const configComment = `<!--\n${buildConfigBlock(s)}\n-->\n\n`;
+
+      // 2. 基本 SEO 設定
+      let html = configComment;
+      html += `<!-- 基本 SEO 設定 -->
+<title>${escapeHtml(title)}</title>
+<meta name="description" content="${escapeHtml(desc)}">
+<meta name="keywords" content="${escapeHtml(kw)}">
+<link rel="canonical" href="${escapeHtml(url)}">`;
+
+      if (robots) {
+        html += `\n<meta name="robots" content="${escapeHtml(robots)}">`;
+      }
+
+      if (author) {
+        html += `\n<meta name="author" content="${escapeHtml(author)}">`;
+      }
+
+      // 3. Open Graph (社群分享 / LINE / Facebook)
+      html += `\n\n<!-- Open Graph (社群分享 / LINE / Facebook) -->
+<meta property="og:locale" content="zh_TW">
+<meta property="og:type" content="website">
+<meta property="og:title" content="${escapeHtml(title)}">
+<meta property="og:description" content="${escapeHtml(desc)}">
+<meta property="og:site_name" content="${escapeHtml(siteName)}">
+<meta property="og:url" content="${escapeHtml(url)}">`;
+
+      // 4. 社群圖片 (只有當 image 有填值時才獨立包覆整組輸出)
+      if (img) {
+        html += `\n\n<!-- 社群分享圖片 (LINE / FB 預覽圖) -->
+<meta property="og:image" content="${escapeHtml(img)}">`;
+        if (s.imageWidth) {
+          html += `\n<meta property="og:image:width" content="${escapeHtml(imgWidth)}">`;
+        }
+        if (s.imageHeight) {
+          html += `\n<meta property="og:image:height" content="${escapeHtml(imgHeight)}">`;
+        }
+        if (imgAlt) {
+          html += `\n<meta property="og:image:alt" content="${escapeHtml(imgAlt)}">`;
+        }
+      }
+
+      // 5. Twitter Card
+      html += `\n\n<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${escapeHtml(title)}">
+<meta name="twitter:description" content="${escapeHtml(desc)}">`;
+
+      if (img) {
+        html += `\n<meta name="twitter:image" content="${escapeHtml(img)}">`;
+      }
+
+      // 6. Schema.org 結構化資料
+      html += `\n\n<!-- 結構化資料 / Schema.org -->
+<meta itemprop="name" content="${escapeHtml(title)}">
+<meta itemprop="description" content="${escapeHtml(desc)}">`;
+
+      if (img) {
+        html += `\n<meta itemprop="image" content="${escapeHtml(img)}">`;
+      }
+
+      return html;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    // 更新各區域 UI
+    function render() {
+      // 1. 同步右方個別欄位
+      if (!isUpdatingFromFields) {
+        f_title.value = state.title || '';
+        f_description.value = state.description || '';
+        f_keyword.value = state.keyword || '';
+        f_src.value = state.src || '';
+        f_image.value = state.image || '';
+        f_imageWidth.value = state.imageWidth || '';
+        f_imageHeight.value = state.imageHeight || '';
+        f_imageAlt.value = state.imageAlt || '';
+        f_siteName.value = state.siteName || '';
+        f_author.value = state.author || '';
+        f_robots.value = state.robots || '';
+      }
+
+      // 2. 更新字數統計
+      const tLen = (state.title || '').length;
+      titleCount.textContent = `${tLen} 字 (建議 30-60 字)`;
+      titleCount.className = (tLen > 65 || tLen < 20 && tLen > 0) ? 'text-amber-500 font-medium' : 'text-slate-400';
+
+      const dLen = (state.description || '').length;
+      descCount.textContent = `${dLen} 字 (建議 80-160 字)`;
+      descCount.className = (dLen > 165 || dLen < 50 && dLen > 0) ? 'text-amber-500 font-medium' : 'text-slate-400';
+
+      // 3. 提取網域供預覽使用
+      let domain = 'example.com';
+      try {
+        if (state.src) {
+          const u = new URL(state.src.startsWith('http') ? state.src : 'https://' + state.src);
+          domain = u.hostname;
+        }
+      } catch (e) {
+        domain = state.src || 'example.com';
+      }
+
+      // 4. 更新 LINE 模擬小卡 (無圖片時使用提示占位符號)
+      previewTitleLine.textContent = state.title || '無標題';
+      previewDescLine.textContent = state.description || '無描述內容';
+      previewUrlLine.textContent = domain;
+      if (state.image && state.image.trim()) {
+        previewImgLine.src = state.image.trim();
+      } else {
+        previewImgLine.src = 'https://placehold.co/600x314/f1f5f9/94a3b8?text=尚未設定圖片+(無+og:image)';
+      }
+
+      // 5. 更新 Facebook 模擬小卡
+      previewTitleFb.textContent = state.title || '無標題';
+      previewDescFb.textContent = state.description || '無描述內容';
+      previewDomainFb.textContent = domain.toUpperCase();
+      if (state.image && state.image.trim()) {
+        previewImgFb.src = state.image.trim();
+      } else {
+        previewImgFb.src = 'https://placehold.co/1200x630/f1f5f9/94a3b8?text=未設定圖片+(社群不會產出圖片標籤)';
+      }
+
+      // 6. 渲染生成的 HTML
+      const generated = generateHtml(state);
+      codeOutput.textContent = generated;
+
+      // 7. 同步左側原始輸入區塊 (若是從右側欄位修改而來)
+      if (isUpdatingFromFields && !isUpdatingFromRaw) {
+        rawInput.value = stateToRawText(state);
+      }
+    }
+
+    // 左側 Textarea 鍵盤輸入事件
+    rawInput.addEventListener('input', () => {
+      isUpdatingFromRaw = true;
+      const parsed = parseRawInput(rawInput.value);
+      // 清空原有鍵並套用解析到的資料
+      state = { ...defaultData, ...parsed };
+      render();
+      isUpdatingFromRaw = false;
+    });
+
+    // 右側各欄位綁定事件
+    const fieldMap = [
+      { el: f_title, key: 'title' },
+      { el: f_description, key: 'description' },
+      { el: f_keyword, key: 'keyword' },
+      { el: f_src, key: 'src' },
+      { el: f_image, key: 'image' },
+      { el: f_imageWidth, key: 'imageWidth' },
+      { el: f_imageHeight, key: 'imageHeight' },
+      { el: f_imageAlt, key: 'imageAlt' },
+      { el: f_siteName, key: 'siteName' },
+      { el: f_author, key: 'author' },
+      { el: f_robots, key: 'robots' },
+    ];
+
+    fieldMap.forEach(({ el, key }) => {
+      el.addEventListener('input', () => {
+        isUpdatingFromFields = true;
+        state[key] = el.value;
+        render();
+        isUpdatingFromFields = false;
+      });
+      el.addEventListener('change', () => {
+        isUpdatingFromFields = true;
+        state[key] = el.value;
+        render();
+        isUpdatingFromFields = false;
+      });
+    });
+
+    // 複製功能
+    function copyCode() {
+      const code = codeOutput.textContent;
+      const textarea = document.createElement('textarea');
+      textarea.value = code;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        showToast('已複製！頂部已附帶設定註解，日後可原封不動貼回工具修改');
+      } catch (err) {
+        showToast('複製失敗，請手動選取複製');
+      }
+      document.body.removeChild(textarea);
+    }
+
+    function showToast(msg) {
+      toastMsg.textContent = msg;
+      toast.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
+      toast.classList.add('opacity-100', 'translate-y-0');
+      setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
+      }, 2500);
+    }
+
+    document.getElementById('copyTopBtn').addEventListener('click', copyCode);
+    document.getElementById('copyBottomBtn').addEventListener('click', copyCode);
+
+    // 重設按鈕
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      state = { ...defaultData };
+      rawInput.value = stateToRawText(state);
+      render();
+      showToast('已清空所有欄位');
+    });
+
+    // 初始化載入
+    window.onload = function () {
+      rawInput.value = stateToRawText(state);
+      render();
+    };
+  </script>
+</body>
+</html>
