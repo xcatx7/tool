@@ -153,25 +153,16 @@
             <summary class="flex items-center justify-between cursor-pointer text-xs font-semibold text-slate-700 hover:text-indigo-600 select-none py-1">
               <span class="flex items-center gap-1.5">
                 <svg class="w-4 h-4 transition-transform group-open:rotate-90 text-slate-400 group-hover:text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                查看 / 編輯推薦補充的 Meta 欄位 (圖片尺寸、作者、Robots 等)
+                查看 / 編輯推薦補充的 Meta 欄位 (圖片描述、站台名稱、作者)
               </span>
               <span class="text-[11px] font-normal text-slate-400 group-open:hidden">點擊展開</span>
             </summary>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 mt-3 pt-2">
-              <div class="space-y-1">
-                <label for="f_imageWidth" class="text-xs font-medium text-slate-600">圖片寬度 (og:image:width)</label>
-                <input type="text" id="f_imageWidth" placeholder="1200" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
-              </div>
-
-              <div class="space-y-1">
-                <label for="f_imageHeight" class="text-xs font-medium text-slate-600">圖片高度 (og:image:height)</label>
-                <input type="text" id="f_imageHeight" placeholder="630" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
-              </div>
 
               <div class="space-y-1">
                 <label for="f_imageAlt" class="text-xs font-medium text-slate-600">圖片描述 (og:image:alt)</label>
-                <input type="text" id="f_imageAlt" placeholder="昌益・富都心四季外觀示意圖" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                <input type="text" id="f_imageAlt" placeholder="留空自動帶入站台名稱或標題" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
               </div>
 
               <div class="space-y-1">
@@ -182,16 +173,6 @@
               <div class="space-y-1">
                 <label for="f_author" class="text-xs font-medium text-slate-600">作者 / 品牌 (author)</label>
                 <input type="text" id="f_author" placeholder="昌益建設" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
-              </div>
-
-              <div class="space-y-1">
-                <label for="f_robots" class="text-xs font-medium text-slate-600">搜尋引擎索引 (robots)</label>
-                <select id="f_robots" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                  <option value="">未指定 (預設遵循 index, follow)</option>
-                  <option value="index, follow">index, follow (收錄並追蹤)</option>
-                  <option value="noindex, follow">noindex, follow (不收錄但追蹤連結)</option>
-                  <option value="noindex, nofollow">noindex, nofollow (完全阻擋搜尋引擎)</option>
-                </select>
               </div>
             </div>
           </details>
@@ -223,7 +204,7 @@
           <div class="bg-[#788eab]/15 p-4 rounded-xl flex justify-center">
             <div class="w-full max-w-xs bg-white rounded-xl overflow-hidden shadow-md border border-slate-200/80">
               <div class="relative w-full aspect-[1.91/1] bg-slate-200 overflow-hidden">
-                <img id="previewImgLine" src="" alt="預覽圖" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/600x314/e2e8f0/64748b?text=No+Image+Provided';">
+                <img id="previewImgLine" src="" alt="預覽圖" class="w-full h-full object-cover">
               </div>
               <div class="p-3 space-y-1">
                 <p id="previewTitleLine" class="text-xs font-bold text-slate-900 line-clamp-2 leading-snug">載入中...</p>
@@ -243,7 +224,7 @@
           <div class="bg-slate-100 p-4 rounded-xl flex justify-center">
             <div class="w-full max-w-sm bg-white rounded-lg overflow-hidden shadow-sm border border-slate-300">
               <div class="relative w-full aspect-[1.91/1] bg-slate-200 overflow-hidden">
-                <img id="previewImgFb" src="" alt="預覽圖" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/1200x630/e2e8f0/64748b?text=OG+Image+Preview';">
+                <img id="previewImgFb" src="" alt="預覽圖" class="w-full h-full object-cover">
               </div>
               <div class="p-3 bg-[#F0F2F5] border-t border-slate-200 space-y-0.5">
                 <p id="previewDomainFb" class="text-[11px] uppercase text-slate-500 font-normal truncate">EXAMPLE.COM</p>
@@ -285,7 +266,7 @@
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 text-xs text-slate-700">
         <div class="p-3 bg-white rounded-xl border border-indigo-100 shadow-2xs space-y-1">
           <span class="font-bold text-indigo-600">1. og:image:width & height</span>
-          <p class="text-slate-600">填入 <code>1200</code> 與 <code>630</code>。能提示 FB / LINE 提前配置版面尺寸，<strong>大幅避免第一次分享時圖片縮圖出不來的問題</strong>。</p>
+          <p class="text-slate-600">填入圖片網址後<strong>自動加上 1200 × 630</strong>，提示 FB / LINE 提前配置版面，避免第一次分享縮圖出不來。請用 OG 圖產生器輸出的尺寸。</p>
         </div>
         <div class="p-3 bg-white rounded-xl border border-indigo-100 shadow-2xs space-y-1">
           <span class="font-bold text-indigo-600">2. twitter:image</span>
@@ -293,18 +274,14 @@
         </div>
         <div class="p-3 bg-white rounded-xl border border-indigo-100 shadow-2xs space-y-1">
           <span class="font-bold text-indigo-600">3. og:image:alt</span>
-          <p class="text-slate-600">分享圖的替代文字。加強 SEO 無障礙友好度與搜尋權重。</p>
+          <p class="text-slate-600">分享圖的替代文字，主要給螢幕閱讀器使用，對排名影響很小。留空會自動帶入案名。</p>
         </div>
         <div class="p-3 bg-white rounded-xl border border-indigo-100 shadow-2xs space-y-1">
           <span class="font-bold text-indigo-600">4. og:site_name</span>
           <p class="text-slate-600">網站所屬品牌名稱，避免搜尋引擎將頁面標題與品牌混淆。</p>
         </div>
         <div class="p-3 bg-white rounded-xl border border-indigo-100 shadow-2xs space-y-1">
-          <span class="font-bold text-indigo-600">5. robots</span>
-          <p class="text-slate-600">設定 <code>index, follow</code> 明確告訴 Google 爬蟲安心收錄並索引子連結。</p>
-        </div>
-        <div class="p-3 bg-white rounded-xl border border-indigo-100 shadow-2xs space-y-1">
-          <span class="font-bold text-indigo-600">6. author / 版權標籤</span>
+          <span class="font-bold text-indigo-600">5. author / 版權標籤</span>
           <p class="text-slate-600">標示建商或代理品牌名稱，強化 Google Knowledge Graph 知識圖譜關聯度。</p>
         </div>
       </div>
@@ -330,8 +307,7 @@
       imageHeight: '',
       imageAlt: '',
       siteName: '',
-      author: '',
-      robots: ''
+      author: ''
     };
 
     let state = { ...defaultData };
@@ -345,12 +321,9 @@
     const f_keyword = document.getElementById('f_keyword');
     const f_src = document.getElementById('f_src');
     const f_image = document.getElementById('f_image');
-    const f_imageWidth = document.getElementById('f_imageWidth');
-    const f_imageHeight = document.getElementById('f_imageHeight');
     const f_imageAlt = document.getElementById('f_imageAlt');
     const f_siteName = document.getElementById('f_siteName');
     const f_author = document.getElementById('f_author');
-    const f_robots = document.getElementById('f_robots');
 
     const titleCount = document.getElementById('titleCount');
     const descCount = document.getElementById('descCount');
@@ -369,6 +342,15 @@
     const toast = document.getElementById('toast');
     const toastMsg = document.getElementById('toastMsg');
 
+    // 內建占位圖 (不依賴外部網站)
+    function placeholder(text) {
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><rect width="100%" height="100%" fill="#f1f5f9"/><text x="50%" y="50%" fill="#94a3b8" font-size="44" font-family="sans-serif" text-anchor="middle" dominant-baseline="middle">${text}</text></svg>`;
+      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    }
+    [previewImgLine, previewImgFb].forEach(img => {
+      img.addEventListener('error', () => { img.src = placeholder('圖片無法載入，請確認網址'); });
+    });
+
     // 格式化為設定鍵值註解或文字
     function buildConfigBlock(s) {
       const lines = [];
@@ -379,12 +361,9 @@
 
       // 補充欄位：有填寫才輸出
       if (s.image) lines.push(`image: '${s.image}',`);
-      if (s.image && s.imageWidth) lines.push(`imageWidth: '${s.imageWidth}',`);
-      if (s.image && s.imageHeight) lines.push(`imageHeight: '${s.imageHeight}',`);
       if (s.image && s.imageAlt) lines.push(`imageAlt: '${s.imageAlt}',`);
       if (s.siteName) lines.push(`siteName: '${s.siteName}',`);
       if (s.author) lines.push(`author: '${s.author}',`);
-      if (s.robots) lines.push(`robots: '${s.robots}',`);
 
       return lines.join('\n');
     }
@@ -406,8 +385,7 @@
         imageHeight: '',
         imageAlt: '',
         siteName: '',
-        author: '',
-        robots: ''
+        author: ''
       };
       
       // 去除 <!-- 與 --> 標籤包裹
@@ -450,11 +428,9 @@
       const url = s.src || '';
       const img = s.image ? s.image.trim() : '';
       const siteName = s.siteName ? s.siteName.trim() : title;
-      const imgWidth = s.imageWidth ? s.imageWidth.trim() : '1200';
-      const imgHeight = s.imageHeight ? s.imageHeight.trim() : '630';
-      const imgAlt = s.imageAlt ? s.imageAlt.trim() : '';
+      // og:image:alt 留空時自動帶入站台名稱，再沒有就用標題
+      const imgAlt = (s.imageAlt && s.imageAlt.trim()) || (s.siteName && s.siteName.trim()) || title;
       const author = s.author ? s.author.trim() : '';
-      const robots = s.robots ? s.robots.trim() : '';
 
       // 1. 產生頂部設定註解 (方便日後直接整塊複製回本工具修改)
       const configComment = `<!--\n${buildConfigBlock(s)}\n-->\n\n`;
@@ -466,10 +442,6 @@
 <meta name="description" content="${escapeHtml(desc)}">
 <meta name="keywords" content="${escapeHtml(kw)}">
 <link rel="canonical" href="${escapeHtml(url)}">`;
-
-      if (robots) {
-        html += `\n<meta name="robots" content="${escapeHtml(robots)}">`;
-      }
 
       if (author) {
         html += `\n<meta name="author" content="${escapeHtml(author)}">`;
@@ -487,13 +459,9 @@
       // 4. 社群圖片 (只有當 image 有填值時才獨立包覆整組輸出)
       if (img) {
         html += `\n\n<!-- 社群分享圖片 (LINE / FB 預覽圖) -->
-<meta property="og:image" content="${escapeHtml(img)}">`;
-        if (s.imageWidth) {
-          html += `\n<meta property="og:image:width" content="${escapeHtml(imgWidth)}">`;
-        }
-        if (s.imageHeight) {
-          html += `\n<meta property="og:image:height" content="${escapeHtml(imgHeight)}">`;
-        }
+<meta property="og:image" content="${escapeHtml(img)}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">`;
         if (imgAlt) {
           html += `\n<meta property="og:image:alt" content="${escapeHtml(imgAlt)}">`;
         }
@@ -539,12 +507,9 @@
         f_keyword.value = state.keyword || '';
         f_src.value = state.src || '';
         f_image.value = state.image || '';
-        f_imageWidth.value = state.imageWidth || '';
-        f_imageHeight.value = state.imageHeight || '';
         f_imageAlt.value = state.imageAlt || '';
         f_siteName.value = state.siteName || '';
         f_author.value = state.author || '';
-        f_robots.value = state.robots || '';
       }
 
       // 2. 更新字數統計
@@ -574,7 +539,7 @@
       if (state.image && state.image.trim()) {
         previewImgLine.src = state.image.trim();
       } else {
-        previewImgLine.src = 'https://placehold.co/600x314/f1f5f9/94a3b8?text=尚未設定圖片+(無+og:image)';
+        previewImgLine.src = placeholder('尚未設定 og:image');
       }
 
       // 5. 更新 Facebook 模擬小卡
@@ -584,7 +549,7 @@
       if (state.image && state.image.trim()) {
         previewImgFb.src = state.image.trim();
       } else {
-        previewImgFb.src = 'https://placehold.co/1200x630/f1f5f9/94a3b8?text=未設定圖片+(社群不會產出圖片標籤)';
+        previewImgFb.src = placeholder('尚未設定 og:image');
       }
 
       // 6. 渲染生成的 HTML
@@ -614,12 +579,9 @@
       { el: f_keyword, key: 'keyword' },
       { el: f_src, key: 'src' },
       { el: f_image, key: 'image' },
-      { el: f_imageWidth, key: 'imageWidth' },
-      { el: f_imageHeight, key: 'imageHeight' },
       { el: f_imageAlt, key: 'imageAlt' },
       { el: f_siteName, key: 'siteName' },
       { el: f_author, key: 'author' },
-      { el: f_robots, key: 'robots' },
     ];
 
     fieldMap.forEach(({ el, key }) => {
