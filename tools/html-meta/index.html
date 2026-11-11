@@ -18,12 +18,28 @@
     .form-group { margin-bottom: 15px; }
     label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 0.9rem; }
     .hint { font-size: 0.8rem; color: #666; margin-bottom: 5px; }
+    /* 說明文字直接接在標題後面，太長才換行 */
+    .hint-inline { font-size: 0.8rem; color: #666; font-weight: normal; margin-left: 6px; }
+    /* 不能填的欄位：純文字顯示、不可選取 */
+    .static-text { padding: 2px 0 4px; font-size: 0.95rem; color: #333; word-break: break-all; user-select: none; -webkit-user-select: none; }
     input, textarea { width: 100%; padding: 8px 10px; border: 0px solid #fff;
       box-shadow: inset 0 1px 7px rgba(0,0,0,0.6);
       border-radius: 4px; font-size: 0.95rem; }
     textarea { resize: vertical; height: 85px; }
 
     .counter { font-size: 0.8rem; text-align: right; color: #666; margin-top: 4px; }
+    .counter:empty { display: none; }
+
+    /* 案名 + 副標：電腦版並排、拿掉完整 Title；手機維持原樣 */
+    .title-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .mobile-only { display: none; }
+    .full-title-group { margin-top: -10px; }
+    .full-title-group:has(.counter:empty) { display: none; }
+    @media (max-width: 768px) {
+      .title-row { grid-template-columns: 1fr; gap: 0; }
+      .mobile-only { display: block; }
+      .full-title-group { margin-top: 0; display: block !important; }
+    }
     .warning { color: #d93025; font-weight: bold; }
     .success { color: #1e8e3e; font-weight: bold; }
 
@@ -208,49 +224,47 @@ Email："></textarea>
     </div>
 
     <div class="form-group" style="margin-top: 20px;">
-      <label>收名單信箱 (1~5組)</label>
-      <div class="hint">💡 系統收到表單預約時的通知發送對象</div>
-      <div id="emailContainer" style="margin-top: 10px;"></div>
+      <label>收名單信箱 (1~5組)<span class="hint-inline">💡 系統收到表單預約時的通知發送對象</span></label>
+      <div id="emailContainer" style="margin-top: 8px;"></div>
       <button type="button" class="btn-add-email" id="btnAddEmail" onclick="addEmailRow()">+ 新增信箱</button>
     </div>
   </div>
 
   <!-- 網站基本必要資料 -->
   <div class="panel" id="formPanel">
-    <h2>網站基本必要資料</h2>
-
     <div class="form-group">
       <label for="siteUrl">網站網址</label>
-      <div class="hint">💡 請幫確認網址</div>
-      <input type="text" id="siteUrl" readonly style="background:#f0f0f0; color:#666; border: 0px;" value="">
+      <div class="static-text" id="siteUrlText"></div>
+      <input type="text" id="siteUrl" style="display:none;" value="">
+    </div>
+
+    <!-- 案名 + 副標：電腦版並排，手機版上下排 -->
+    <div class="title-row">
+      <div class="form-group">
+        <label for="caseName">案名</label>
+        <input type="text" id="caseName" value="" placeholder="無法公開可寫 XX案" oninput="updateMeta()">
+      </div>
+      <div class="form-group">
+        <label for="slogan">副標</label>
+        <input type="text" id="slogan" value="" placeholder="例：預備展開生活新居式" oninput="updateMeta()">
+      </div>
+    </div>
+
+    <!-- 完整 Title：只在手機版顯示；字數提示電腦版也會出現 -->
+    <div class="form-group full-title-group">
+      <label class="mobile-only">完整 Title 預覽</label>
+      <div class="static-text mobile-only" id="fullTitle"></div>
+      <div class="counter" id="titleCount"></div>
     </div>
 
     <div class="form-group">
-      <label for="caseName">建案名稱（案名）</label>
-      <input type="text" id="caseName" value="" placeholder="請輸入案名(如無法公開，可用XX案代替)" oninput="updateMeta()">
-    </div>
-
-    <div class="form-group">
-      <label for="slogan">建案副標 / 訴求</label>
-      <input type="text" id="slogan" value="" placeholder="請輸入副標（例如：預備展開生活新居式）" oninput="updateMeta()">
-    </div>
-
-    <div class="form-group">
-      <label>完整 Title 預覽 (SEO 格式修正後)</label>
-      <input type="text" id="fullTitle" readonly style="background:#f0f0f0; border: 0px;">
-      <div class="counter" id="titleCount">字數：0 字</div>
-    </div>
-
-    <div class="form-group">
-      <label for="descText">Description（網站描述）</label>
-      <div class="hint">💡 建議格式（案名：敘述。地址與電話可視狀況放入）</div>
+      <label for="descText">網站描述<span class="hint-inline">💡 格式：案名：敘述，可加地址與電話</span></label>
       <textarea id="descText" placeholder="請輸入網站描述..." oninput="updateMeta()"></textarea>
-      <div class="counter" id="descCount">字數：0 字</div>
+      <div class="counter" id="descCount"></div>
     </div>
 
     <div class="form-group">
-      <label>Keywords（關鍵字，限 5 個）</label>
-      <div class="hint">💡 通常是案名、地區建案、地區買房、地標建案。</div>
+      <label>關鍵字（5 個）<span class="hint-inline">💡 案名、地區建案、地區買房、地標建案</span></label>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px;">
         <input type="text" class="kw-input" placeholder="關鍵字 1" oninput="updateMeta()">
         <input type="text" class="kw-input" placeholder="關鍵字 2" oninput="updateMeta()">
@@ -272,7 +286,7 @@ Email："></textarea>
           <span class="google-site-icon"></span>
           <span>官方網站</span>
         </div>
-        <div class="google-url" id="previewUrl">https://www.example.com.tw</div>
+        <div class="google-url" id="previewUrl">(未確認網址)</div>
         <div class="google-title" id="previewTitle">標題預覽</div>
         <div class="google-desc" id="previewDesc">描述預覽</div>
         <div class="kw-tag-container" id="previewKeywordsTag"></div>
@@ -311,7 +325,7 @@ Email："></textarea>
 
 <script>
 let generatedTxtOutput = '';
-let finalCleanUrl = 'https://www.example.com.tw';
+let finalCleanUrl = '(未確認網址)';
 let currentTargetQuery = '';
 
 const DEFAULTS = { address: '不公開', phone: '不公開', fb: '申請中', gmap: '同接待中心地址' };
@@ -322,7 +336,7 @@ function getUrlParam(key) {
 }
 
 function cleanAndFixUrl(inputUrl) {
-  if (!inputUrl) return 'https://www.example.com.tw';
+  if (!inputUrl) return '(未確認網址)';
   let url = inputUrl.trim();
   if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
   return url.replace(/\/+$/, '');
@@ -332,6 +346,7 @@ function cleanAndFixUrl(inputUrl) {
 function setSiteUrl(raw) {
   finalCleanUrl = cleanAndFixUrl(raw);
   document.getElementById('siteUrl').value = finalCleanUrl;
+  document.getElementById('siteUrlText').innerText = finalCleanUrl;
   document.getElementById('previewUrl').innerText = finalCleanUrl;
 }
 
@@ -389,9 +404,27 @@ window.addEventListener('DOMContentLoaded', () => {
   // 只有網址帶 admin（例：?admin 或 ?admin=1）才顯示帶入工具
   if (new URLSearchParams(window.location.search).has('admin')) {
     document.getElementById('adminTrigger').classList.add('show');
+
+    // admin 模式：網站網址可編輯
+    const siteEl = document.getElementById('siteUrl');
+    siteEl.style.display = '';
+    document.getElementById('siteUrlText').style.display = 'none';
+    siteEl.placeholder = '請輸入網站網址，例如 https://fudu.tw';
+    siteEl.addEventListener('input', () => {
+      finalCleanUrl = cleanAndFixUrl(siteEl.value);
+      document.getElementById('previewUrl').innerText = finalCleanUrl;
+      updateMeta();
+    });
+    siteEl.addEventListener('blur', () => {
+      if (siteEl.value.trim()) siteEl.value = finalCleanUrl;
+    });
   }
 
   setSiteUrl(getUrlParam('url'));
+  // admin 模式且沒帶 url 參數時，欄位留空方便直接輸入
+  if (document.getElementById('siteUrl').style.display !== 'none' && !getUrlParam('url')) {
+    document.getElementById('siteUrl').value = '';
+  }
 
   const paramTitle = getUrlParam('title') || getUrlParam('caseName');
   if (paramTitle) applyTitle(paramTitle);
@@ -509,22 +542,24 @@ function updateMeta() {
   const caseName = cleanAndSanitize(document.getElementById('caseName').value.trim()) || 'xxx案';
   const slogan = cleanAndSanitize(document.getElementById('slogan').value.trim());
   const fullTitle = slogan ? `${caseName}｜${slogan}｜官網` : `${caseName}｜官網`;
-  document.getElementById('fullTitle').value = fullTitle;
+  document.getElementById('fullTitle').innerText = fullTitle;
   document.getElementById('previewTitle').innerText = fullTitle;
 
   const titleLen = fullTitle.length;
   const titleCounter = document.getElementById('titleCount');
-  if (titleLen > 35) titleCounter.innerHTML = `字數：${titleLen} 字 <span class="warning">（長度 ${titleLen} 字過長，手機版可能被 Google 截斷或重寫）</span>`;
-  else if (titleLen >= 15) titleCounter.innerHTML = `字數：${titleLen} 字 <span class="success">（長度適中，符合 Mobile SEO 標準）</span>`;
-  else titleCounter.innerHTML = `字數：${titleLen} 字 （長度較短）`;
+  // 只在有問題時顯示提示
+  const hasTitleInput = document.getElementById('caseName').value.trim() || document.getElementById('slogan').value.trim();
+  if (titleLen > 35) titleCounter.innerHTML = `<span class="warning">Title ${titleLen} 字過長，手機版可能被截斷</span>`;
+  else if (hasTitleInput && titleLen < 15) titleCounter.innerHTML = `Title ${titleLen} 字，稍短`;
+  else titleCounter.innerHTML = '';
 
   const descText = cleanAndSanitize(document.getElementById('descText').value.trim());
   document.getElementById('previewDesc').innerText = descText || '（請輸入網站描述...）';
   const descLen = descText.length;
   const descCounter = document.getElementById('descCount');
-  if (descLen > 80) descCounter.innerHTML = `字數：${descLen} 字 <span class="warning">（超過 80 字，手機版將會自動顯示 ...）</span>`;
-  else if (descLen >= 50) descCounter.innerHTML = `字數：${descLen} 字 <span class="success">（長度適中）</span>`;
-  else descCounter.innerHTML = `字數：${descLen} 字`;
+  if (descLen > 80) descCounter.innerHTML = `<span class="warning">${descLen} 字，超過 80 字手機版會顯示 ...</span>`;
+  else if (descLen > 0 && descLen < 50) descCounter.innerHTML = `${descLen} 字，建議 50～80 字`;
+  else descCounter.innerHTML = '';
 
   const kwArray = [];
   const tagContainer = document.getElementById('previewKeywordsTag');
@@ -660,7 +695,7 @@ function generateShareUrl(msg) {
   const p = new URLSearchParams();
   const v = id => document.getElementById(id).value.trim();
 
-  if (finalCleanUrl && finalCleanUrl !== 'https://www.example.com.tw') p.set('url', finalCleanUrl);
+  if (finalCleanUrl && finalCleanUrl !== '(未確認網址)') p.set('url', finalCleanUrl);
 
   const caseName = v('caseName'), slogan = v('slogan');
   if (caseName || slogan) p.set('title', slogan ? `${caseName}｜${slogan}｜官網` : `${caseName}｜官網`);
