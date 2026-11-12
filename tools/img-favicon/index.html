@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Favicon 產生器</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', 'Noto Sans TC', sans-serif; }
+    .checker {
+      background-color: #fff;
+      background-image:
+        linear-gradient(45deg, #e2e8f0 25%, transparent 25%),
+        linear-gradient(-45deg, #e2e8f0 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #e2e8f0 75%),
+        linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    }
+    input[type=range] { accent-color: #4f46e5; }
+    .drop-active { outline: 2px dashed #6366f1; outline-offset: 2px; background: #eef2ff; }
+    .pixel { image-rendering: auto; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center space-x-3">
+        <span class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-indigo-600 text-white shadow-sm">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+        </span>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 tracking-tight">Favicon 產生器</h1>
+          <p class="text-xs text-slate-500">背景 + 圖示，一鍵輸出 144×144 favicon.png</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="resetBtn" type="button" class="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200">重設</button>
+        <button id="downloadTopBtn" type="button" class="px-3.5 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-all flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          <span class="dl-label">下載 favicon.png</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- 預覽 -->
+      <section class="lg:col-span-5 space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-3 lg:sticky lg:top-20">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+            <div>
+              <h2 class="text-sm font-bold text-slate-900">🖼️ 即時預覽</h2>
+              <p class="text-xs text-slate-500 mt-0.5">格紋代表透明區域；可直接把圖片拖進預覽區</p>
+            </div>
+            <span class="text-[11px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded">144 × 144</span>
+          </div>
+
+          <div id="stage" class="checker rounded-xl border border-slate-200 mx-auto w-full max-w-[288px] aspect-square overflow-hidden transition">
+            <canvas id="canvas" width="144" height="144" class="block w-full h-full pixel"></canvas>
+          </div>
+
+          <!-- 實際尺寸 -->
+          <div class="pt-2 border-t border-slate-100 space-y-2">
+            <p class="text-xs font-semibold text-slate-700">實際尺寸效果</p>
+            <div class="flex items-end gap-4">
+              <div class="text-center space-y-1">
+                <img id="sz16" class="w-4 h-4 mx-auto" alt="">
+                <span class="block text-[10px] text-slate-400">16</span>
+              </div>
+              <div class="text-center space-y-1">
+                <img id="sz32" class="w-8 h-8 mx-auto" alt="">
+                <span class="block text-[10px] text-slate-400">32</span>
+              </div>
+              <div class="text-center space-y-1">
+                <img id="sz48" class="w-12 h-12 mx-auto" alt="">
+                <span class="block text-[10px] text-slate-400">48</span>
+              </div>
+              <div class="text-center space-y-1">
+                <img id="sz72" class="w-[72px] h-[72px] mx-auto rounded-2xl shadow" alt="">
+                <span class="block text-[10px] text-slate-400">手機桌面</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 瀏覽器分頁模擬 -->
+          <div class="space-y-2">
+            <p class="text-xs font-semibold text-slate-700">瀏覽器分頁</p>
+            <div class="rounded-lg overflow-hidden border border-slate-300">
+              <div class="bg-slate-200 px-2 pt-2 flex gap-1">
+                <div class="bg-white rounded-t-lg px-3 py-1.5 flex items-center gap-2 min-w-0 max-w-[60%]">
+                  <img id="tabLight" class="w-4 h-4 shrink-0" alt="">
+                  <span class="text-[11px] text-slate-700 truncate">網站標題｜官網</span>
+                </div>
+              </div>
+              <div class="h-3 bg-white"></div>
+            </div>
+            <div class="rounded-lg overflow-hidden border border-slate-700">
+              <div class="bg-[#202124] px-2 pt-2 flex gap-1">
+                <div class="bg-[#35363a] rounded-t-lg px-3 py-1.5 flex items-center gap-2 min-w-0 max-w-[60%]">
+                  <img id="tabDark" class="w-4 h-4 shrink-0" alt="">
+                  <span class="text-[11px] text-slate-200 truncate">網站標題｜官網（深色模式）</span>
+                </div>
+              </div>
+              <div class="h-3 bg-[#35363a]"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 設定 -->
+      <section class="lg:col-span-7 space-y-4">
+
+        <!-- 背景 -->
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-3">
+          <h2 class="text-sm font-bold text-slate-900 pb-2 border-b border-slate-100">🎨 背景</h2>
+
+          <div class="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-lg text-xs font-semibold">
+            <button type="button" data-group="bgMode" data-val="transparent" class="seg py-1.5 rounded-md">透明</button>
+            <button type="button" data-group="bgMode" data-val="color" class="seg py-1.5 rounded-md">顏色</button>
+            <button type="button" data-group="bgMode" data-val="image" class="seg py-1.5 rounded-md">圖片</button>
+          </div>
+
+          <div id="bgColorPanel" class="space-y-2">
+            <div class="flex items-center gap-2">
+              <input type="color" id="bgColor" class="w-10 h-9 rounded-lg border border-slate-200 cursor-pointer p-0.5 bg-white">
+              <input type="text" id="bgColorHex" class="w-28 px-2.5 py-1.5 text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+              <div class="flex flex-wrap gap-1.5 swatches" data-target="bgColor"></div>
+            </div>
+          </div>
+
+          <div id="bgImagePanel" class="space-y-2">
+            <label id="bgDrop" class="flex flex-col items-center justify-center h-16 border-2 border-dashed border-slate-200 rounded-xl text-xs text-slate-500 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/40 transition overflow-hidden relative">
+              <img id="bgThumb" class="hidden absolute inset-0 w-full h-full object-cover opacity-60" alt="">
+              <span class="relative">點擊或拖曳上傳背景圖</span>
+              <input type="file" id="bgFile" accept="image/*,.svg" class="hidden">
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <div class="flex justify-between text-[11px] text-slate-500"><span>縮放</span><span id="bgScaleVal">100%</span></div>
+                <input type="range" id="bgScale" min="100" max="300" value="100" class="w-full">
+              </div>
+              <div>
+                <div class="text-[11px] text-slate-500">水平位置</div>
+                <input type="range" id="bgX" min="0" max="100" value="50" class="w-full">
+              </div>
+              <div>
+                <div class="text-[11px] text-slate-500">垂直位置</div>
+                <input type="range" id="bgY" min="0" max="100" value="50" class="w-full">
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-slate-100" id="bgRadiusRow">
+            <div class="flex justify-between text-[11px] text-slate-500"><span>背景圓角（0 = 直角方形，50% = 圓形）</span><span id="bgRadiusVal">0%</span></div>
+            <input type="range" id="bgRadius" min="0" max="50" value="0" class="w-full">
+          </div>
+        </div>
+
+        <!-- 圖示 -->
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-3">
+          <h2 class="text-sm font-bold text-slate-900 pb-2 border-b border-slate-100">⭐ 圖示</h2>
+
+          <div class="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-lg text-xs font-semibold">
+            <button type="button" data-group="iconMode" data-val="logo" class="seg py-1.5 rounded-md">① Logo 圖片</button>
+            <button type="button" data-group="iconMode" data-val="shape" class="seg py-1.5 rounded-md">② 圓形 / 方形</button>
+          </div>
+
+          <!-- 模式 1：Logo -->
+          <div id="logoPanel" class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-700">Logo 圖片（建議透明 PNG / SVG）</span>
+              <button type="button" id="clearLogo" class="hidden text-[11px] text-rose-600 hover:underline">移除</button>
+            </div>
+            <label id="logoDrop" class="flex flex-col items-center justify-center gap-1 h-20 border-2 border-dashed border-slate-200 rounded-xl text-xs text-slate-500 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/40 transition checker">
+              <img id="logoThumb" class="hidden max-h-14 max-w-[80%] object-contain" alt="">
+              <span id="logoHint">點擊或拖曳上傳 Logo</span>
+              <input type="file" id="logoFile" accept="image/*,.svg" class="hidden">
+            </label>
+          </div>
+
+          <!-- 模式 2：形狀 -->
+          <div id="shapePanel" class="space-y-3">
+            <div class="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-lg text-xs font-semibold">
+              <button type="button" data-group="shape" data-val="circle" class="seg py-1.5 rounded-md">● 圓形</button>
+              <button type="button" data-group="shape" data-val="square" class="seg py-1.5 rounded-md">■ 方形</button>
+            </div>
+
+            <div id="shapeRadiusRow">
+              <div class="flex justify-between text-[11px] text-slate-500"><span>方形圓角</span><span id="shapeRadiusVal">0%</span></div>
+              <input type="range" id="shapeRadius" min="0" max="45" value="0" class="w-full">
+            </div>
+
+            <div class="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-lg text-xs font-semibold">
+              <button type="button" data-group="shapeFill" data-val="color" class="seg py-1.5 rounded-md">填色</button>
+              <button type="button" data-group="shapeFill" data-val="image" class="seg py-1.5 rounded-md">填圖片</button>
+            </div>
+
+            <div id="shapeColorPanel" class="flex items-center gap-2">
+              <input type="color" id="shapeColor" class="w-10 h-9 rounded-lg border border-slate-200 cursor-pointer p-0.5 bg-white">
+              <input type="text" id="shapeColorHex" class="w-28 px-2.5 py-1.5 text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+              <div class="flex flex-wrap gap-1.5 swatches" data-target="shapeColor"></div>
+            </div>
+
+            <div id="shapeImagePanel" class="space-y-2">
+              <label id="shapeDrop" class="flex flex-col items-center justify-center h-16 border-2 border-dashed border-slate-200 rounded-xl text-xs text-slate-500 cursor-pointer hover:border-indigo-300 hover:bg-indigo-50/40 transition overflow-hidden relative">
+                <img id="shapeThumb" class="hidden absolute inset-0 w-full h-full object-cover opacity-60" alt="">
+                <span class="relative">點擊或拖曳上傳圖片（會裁切進形狀內）</span>
+                <input type="file" id="shapeFile" accept="image/*,.svg" class="hidden">
+              </label>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <div class="flex justify-between text-[11px] text-slate-500"><span>圖片縮放</span><span id="shapeImgScaleVal">100%</span></div>
+                  <input type="range" id="shapeImgScale" min="100" max="300" value="100" class="w-full">
+                </div>
+                <div>
+                  <div class="text-[11px] text-slate-500">水平位置</div>
+                  <input type="range" id="shapeImgX" min="0" max="100" value="50" class="w-full">
+                </div>
+                <div>
+                  <div class="text-[11px] text-slate-500">垂直位置</div>
+                  <input type="range" id="shapeImgY" min="0" max="100" value="50" class="w-full">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 共用：尺寸與位置 -->
+          <div class="pt-3 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-500"><span>圖示大小</span><span id="iconSizeVal">80%</span></div>
+              <input type="range" id="iconSize" min="10" max="100" value="80" class="w-full">
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-500"><span>水平偏移</span><span id="iconXVal">0</span></div>
+              <input type="range" id="iconX" min="-30" max="30" value="0" class="w-full">
+            </div>
+            <div>
+              <div class="flex justify-between text-[11px] text-slate-500"><span>垂直偏移</span><span id="iconYVal">0</span></div>
+              <input type="range" id="iconY" min="-30" max="30" value="0" class="w-full">
+            </div>
+          </div>
+          <p class="text-[11px] text-slate-400">圖示大小 100% = 剛好塞滿 144×144（等比，不會變形）。favicon 在分頁上只有 16px，建議 Logo 選最簡單的圖形或單字。</p>
+        </div>
+
+        <!-- 輸出 -->
+        <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 space-y-3">
+          <h2 class="text-sm font-bold text-slate-900 pb-2 border-b border-slate-100">💾 輸出</h2>
+          <div class="flex flex-wrap items-end gap-3">
+            <div class="space-y-1">
+              <label for="fileName" class="text-[11px] font-medium text-slate-600">檔名</label>
+              <div class="flex items-center">
+                <input type="text" id="fileName" value="favicon" class="w-40 px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-l-lg focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                <span class="px-2.5 py-1.5 text-xs bg-slate-100 border border-l-0 border-slate-200 rounded-r-lg text-slate-500">.png</span>
+              </div>
+            </div>
+            <button id="downloadBtn" type="button" class="flex-1 min-w-[10rem] py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm transition-all flex items-center justify-center gap-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span class="dl-label">下載 favicon.png</span>
+            </button>
+          </div>
+          <div class="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg border border-slate-200/70 leading-relaxed space-y-1">
+            <p>💡 放到網站根目錄，<code>&lt;head&gt;</code> 加上：</p>
+            <pre class="bg-slate-900 text-white rounded-md p-2 font-mono text-[11px] overflow-x-auto"><code id="snippet"></code></pre>
+            <button type="button" id="copySnippet" class="text-indigo-600 hover:underline">複製這段</button>
+          </div>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-xl text-xs font-medium transition-all duration-300 opacity-0 translate-y-4 pointer-events-none flex items-center gap-2 z-50">
+    <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+    <span id="toastMsg"></span>
+  </div>
+
+  <script>
+    const S = 144;
+    const $ = id => document.getElementById(id);
+    const canvas = $('canvas'), ctx = canvas.getContext('2d');
+
+    const defaults = {
+      bgMode: 'transparent', bgColor: '#ffffff', bgScale: 100, bgX: 50, bgY: 50, bgRadius: 0,
+      iconMode: 'logo',
+      shape: 'circle', shapeRadius: 0, shapeFill: 'color', shapeColor: '#4f46e5',
+      shapeImgScale: 100, shapeImgX: 50, shapeImgY: 50,
+      iconSize: 80, iconX: 0, iconY: 0,
+      fileName: 'favicon'
+    };
+    let s = { ...defaults };
+    let bgImg = null, logoImg = null, shapeImg = null;
+
+    const SWATCHES = ['#ffffff', '#000000', '#0f172a', '#123c34', '#b8975a', '#4f46e5', '#9f1239', '#ea580c'];
+
+    // ---------- 繪製 ----------
+    function roundRect(c, x, y, w, h, r) {
+      r = Math.max(0, Math.min(r, w / 2, h / 2));
+      c.beginPath();
+      c.moveTo(x + r, y);
+      c.arcTo(x + w, y, x + w, y + h, r);
+      c.arcTo(x + w, y + h, x, y + h, r);
+      c.arcTo(x, y + h, x, y, r);
+      c.arcTo(x, y, x + w, y, r);
+      c.closePath();
+    }
+
+    // 以 cover 方式把圖片畫進 (x,y,w,h)，可縮放與調整位置
+    function drawCover(img, x, y, w, h, scale, px, py) {
+      const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+      const sc = Math.max(w / iw, h / ih) * (scale / 100);
+      const dw = iw * sc, dh = ih * sc;
+      ctx.drawImage(img, x + (w - dw) * (px / 100), y + (h - dh) * (py / 100), dw, dh);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, S, S);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+
+      // 1. 背景（以圓角剪裁）
+      if (s.bgMode !== 'transparent') {
+        ctx.save();
+        roundRect(ctx, 0, 0, S, S, S * s.bgRadius / 100);
+        ctx.clip();
+        if (s.bgMode === 'color') {
+          ctx.fillStyle = s.bgColor;
+          ctx.fillRect(0, 0, S, S);
+        } else if (bgImg) {
+          drawCover(bgImg, 0, 0, S, S, s.bgScale, s.bgX, s.bgY);
+        }
+        ctx.restore();
+      }
+
+      // 2. 圖示
+      const size = S * s.iconSize / 100;
+      const cx = S / 2 + S * s.iconX / 100;
+      const cy = S / 2 + S * s.iconY / 100;
+      const x = cx - size / 2, y = cy - size / 2;
+
+      if (s.iconMode === 'logo') {
+        if (logoImg) {
+          const lw = logoImg.naturalWidth || logoImg.width, lh = logoImg.naturalHeight || logoImg.height;
+          const sc = Math.min(size / lw, size / lh);
+          const dw = lw * sc, dh = lh * sc;
+          ctx.drawImage(logoImg, cx - dw / 2, cy - dh / 2, dw, dh);
+        }
+      } else {
+        ctx.save();
+        if (s.shape === 'circle') {
+          ctx.beginPath();
+          ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
+          ctx.closePath();
+        } else {
+          roundRect(ctx, x, y, size, size, size * s.shapeRadius / 100);
+        }
+        if (s.shapeFill === 'image' && shapeImg) {
+          ctx.clip();
+          drawCover(shapeImg, x, y, size, size, s.shapeImgScale, s.shapeImgX, s.shapeImgY);
+        } else {
+          ctx.fillStyle = s.shapeColor;
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      updatePreviews();
+    }
+
+    let pvTimer;
+    function updatePreviews() {
+      clearTimeout(pvTimer);
+      pvTimer = setTimeout(() => {
+        const url = canvas.toDataURL('image/png');
+        ['sz16', 'sz32', 'sz48', 'sz72', 'tabLight', 'tabDark'].forEach(id => $(id).src = url);
+      }, 60);
+    }
+
+    // ---------- 圖片載入（SVG 會補 viewBox 並點陣化，避免爆框） ----------
+    async function loadSvg(file) {
+      const text = await file.text();
+      const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+      const svg = doc.documentElement;
+      if (!svg || svg.nodeName.toLowerCase() !== 'svg') throw new Error('SVG 格式錯誤');
+      let vb = (svg.getAttribute('viewBox') || '').trim().split(/[\s,]+/).map(Number);
+      let w = parseFloat(svg.getAttribute('width')), h = parseFloat(svg.getAttribute('height'));
+      if (vb.length !== 4 || vb.some(isNaN)) {
+        if (!w || !h) { w = 1000; h = 1000; }
+        vb = [0, 0, w, h];
+        svg.setAttribute('viewBox', vb.join(' '));
+      }
+      const ratio = vb[2] / vb[3], LONG = 1024;
+      const rw = ratio >= 1 ? LONG : Math.round(LONG * ratio);
+      const rh = ratio >= 1 ? Math.round(LONG / ratio) : LONG;
+      svg.setAttribute('width', rw);
+      svg.setAttribute('height', rh);
+      svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+      const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(svg));
+      const img = await new Promise((res, rej) => {
+        const i = new Image();
+        i.onload = () => res(i);
+        i.onerror = () => rej(new Error('SVG 讀取失敗'));
+        i.src = url;
+      });
+      const c = document.createElement('canvas');
+      c.width = rw; c.height = rh;
+      c.getContext('2d').drawImage(img, 0, 0, rw, rh);
+      return { img: c, url };
+    }
+
+    function loadImage(file) {
+      if (file && (file.type === 'image/svg+xml' || /\.svg$/i.test(file.name || ''))) return loadSvg(file);
+      return new Promise((resolve, reject) => {
+        if (!file || !file.type.startsWith('image/')) { reject(new Error('不是圖片檔')); return; }
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => resolve({ img, url: reader.result });
+          img.onerror = () => reject(new Error('圖片讀取失敗'));
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function setBg(file) {
+      try {
+        const { img, url } = await loadImage(file);
+        bgImg = img; $('bgThumb').src = url; $('bgThumb').classList.remove('hidden');
+        s.bgMode = 'image'; syncUI(); draw();
+      } catch (e) { toast(e.message); }
+    }
+    async function setLogo(file) {
+      try {
+        const { img, url } = await loadImage(file);
+        logoImg = img; $('logoThumb').src = url; $('logoThumb').classList.remove('hidden');
+        $('logoHint').classList.add('hidden'); $('clearLogo').classList.remove('hidden');
+        s.iconMode = 'logo'; syncUI(); draw();
+      } catch (e) { toast(e.message); }
+    }
+    async function setShapeImg(file) {
+      try {
+        const { img, url } = await loadImage(file);
+        shapeImg = img; $('shapeThumb').src = url; $('shapeThumb').classList.remove('hidden');
+        s.iconMode = 'shape'; s.shapeFill = 'image'; syncUI(); draw();
+      } catch (e) { toast(e.message); }
+    }
+
+    $('bgFile').addEventListener('change', e => { setBg(e.target.files[0]); e.target.value = ''; });
+    $('logoFile').addEventListener('change', e => { setLogo(e.target.files[0]); e.target.value = ''; });
+    $('shapeFile').addEventListener('change', e => { setShapeImg(e.target.files[0]); e.target.value = ''; });
+
+    function clearLogo() {
+      logoImg = null;
+      $('logoThumb').classList.add('hidden'); $('logoHint').classList.remove('hidden'); $('clearLogo').classList.add('hidden');
+    }
+    $('clearLogo').addEventListener('click', () => { clearLogo(); draw(); });
+
+    function bindDrop(el, handler) {
+      el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('drop-active'); });
+      el.addEventListener('dragleave', () => el.classList.remove('drop-active'));
+      el.addEventListener('drop', e => {
+        e.preventDefault(); el.classList.remove('drop-active');
+        const f = e.dataTransfer.files[0];
+        if (f) handler(f);
+      });
+    }
+    bindDrop($('bgDrop'), setBg);
+    bindDrop($('logoDrop'), setLogo);
+    bindDrop($('shapeDrop'), setShapeImg);
+    // 拖到預覽區 → 依目前圖示模式放入
+    bindDrop($('stage'), f => s.iconMode === 'shape' ? setShapeImg(f) : setLogo(f));
+
+    document.addEventListener('paste', e => {
+      if (e.target.tagName === 'INPUT') return;
+      const item = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith('image/'));
+      if (item) { setLogo(item.getAsFile()); toast('已從剪貼簿貼上為 Logo'); }
+    });
+
+    // ---------- 控制項 ----------
+    const ranges = [
+      ['bgScale', v => v + '%'], ['bgX'], ['bgY'], ['bgRadius', v => v + '%'],
+      ['shapeRadius', v => v + '%'], ['shapeImgScale', v => v + '%'], ['shapeImgX'], ['shapeImgY'],
+      ['iconSize', v => v + '%'], ['iconX', v => (v > 0 ? '+' : '') + v], ['iconY', v => (v > 0 ? '+' : '') + v]
+    ];
+    ranges.forEach(([key, fmt]) => {
+      $(key).addEventListener('input', e => {
+        s[key] = +e.target.value;
+        if (fmt) $(key + 'Val').textContent = fmt(s[key]);
+        draw();
+      });
+    });
+
+    function bindColor(key) {
+      $(key).addEventListener('input', e => { s[key] = e.target.value; $(key + 'Hex').value = s[key]; draw(); });
+      $(key + 'Hex').addEventListener('input', e => {
+        let v = e.target.value.trim();
+        if (!v.startsWith('#')) v = '#' + v;
+        if (/^#[0-9a-fA-F]{6}$/.test(v)) { s[key] = v.toLowerCase(); $(key).value = s[key]; draw(); }
+      });
+    }
+    bindColor('bgColor');
+    bindColor('shapeColor');
+
+    document.querySelectorAll('.swatches').forEach(wrap => {
+      const key = wrap.dataset.target;
+      SWATCHES.forEach(c => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.title = c;
+        b.className = 'w-6 h-6 rounded-md border border-slate-300 hover:scale-110 transition-transform';
+        b.style.background = c;
+        b.addEventListener('click', () => {
+          s[key] = c; $(key).value = c; $(key + 'Hex').value = c;
+          if (key === 'bgColor') s.bgMode = 'color';
+          syncUI(); draw();
+        });
+        wrap.appendChild(b);
+      });
+    });
+
+    document.querySelectorAll('.seg').forEach(btn => {
+      btn.addEventListener('click', () => { s[btn.dataset.group] = btn.dataset.val; syncUI(); draw(); });
+    });
+
+    function syncUI() {
+      document.querySelectorAll('.seg').forEach(b => {
+        const on = s[b.dataset.group] === b.dataset.val;
+        b.className = 'seg py-1.5 rounded-md transition ' + (on ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700');
+      });
+      $('bgColorPanel').classList.toggle('hidden', s.bgMode !== 'color');
+      $('bgImagePanel').classList.toggle('hidden', s.bgMode !== 'image');
+      $('bgRadiusRow').classList.toggle('hidden', s.bgMode === 'transparent');
+      $('logoPanel').classList.toggle('hidden', s.iconMode !== 'logo');
+      $('shapePanel').classList.toggle('hidden', s.iconMode !== 'shape');
+      $('shapeRadiusRow').classList.toggle('hidden', s.shape !== 'square');
+      $('shapeColorPanel').classList.toggle('hidden', s.shapeFill !== 'color');
+      $('shapeImagePanel').classList.toggle('hidden', s.shapeFill !== 'image');
+    }
+
+    // ---------- 輸出 ----------
+    function fileName() { return ((s.fileName || '').trim() || 'favicon') + '.png'; }
+    function syncName() {
+      document.querySelectorAll('.dl-label').forEach(el => el.textContent = '下載 ' + fileName());
+      const n = fileName();
+      $('snippet').textContent =
+`<link rel="icon" type="image/png" sizes="144x144" href="/${n}">
+<link rel="apple-touch-icon" href="/${n}">`;
+    }
+    $('fileName').addEventListener('input', e => { s.fileName = e.target.value.replace(/[\\/:*?"<>|.]/g, ''); syncName(); });
+
+    function download() {
+      canvas.toBlob(blob => {
+        if (!blob) { toast('輸出失敗'); return; }
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = fileName();
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        toast(`已下載 ${fileName()}（${(blob.size / 1024).toFixed(1)} KB）`);
+      }, 'image/png');
+    }
+    $('downloadBtn').addEventListener('click', download);
+    $('downloadTopBtn').addEventListener('click', download);
+
+    $('copySnippet').addEventListener('click', () => {
+      const t = document.createElement('textarea');
+      t.value = $('snippet').textContent; t.style.position = 'fixed'; t.style.opacity = '0';
+      document.body.appendChild(t); t.select();
+      try { document.execCommand('copy'); toast('已複製'); } catch (e) { toast('複製失敗，請手動選取'); }
+      t.remove();
+    });
+
+    // ---------- 重設 ----------
+    function applyState() {
+      ['bgColor', 'shapeColor'].forEach(k => { $(k).value = s[k]; $(k + 'Hex').value = s[k]; });
+      ranges.forEach(([key, fmt]) => { $(key).value = s[key]; if (fmt) $(key + 'Val').textContent = fmt(s[key]); });
+      $('fileName').value = s.fileName;
+      syncUI(); syncName(); draw();
+    }
+    $('resetBtn').addEventListener('click', () => {
+      s = { ...defaults };
+      bgImg = null; shapeImg = null; clearLogo();
+      $('bgThumb').classList.add('hidden'); $('shapeThumb').classList.add('hidden');
+      applyState();
+      toast('已重設');
+    });
+
+    function toast(msg) {
+      const t = $('toast');
+      $('toastMsg').textContent = msg;
+      t.classList.remove('opacity-0', 'translate-y-4');
+      clearTimeout(t._h);
+      t._h = setTimeout(() => t.classList.add('opacity-0', 'translate-y-4'), 2200);
+    }
+
+    applyState();
+  </script>
+</body>
+</html>
