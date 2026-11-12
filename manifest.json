@@ -1,5 +1,10 @@
 [
   {
+    "name": "img-favicon圖示產生工具",
+    "date": "2026-11-12",
+    "path": "tools/img-favicon/index.html"
+  },
+  {
     "name": "html-Meta 完成碼產生工具",
     "date": "2026-11-10",
     "path": "tools/html-meta2/index.html"
