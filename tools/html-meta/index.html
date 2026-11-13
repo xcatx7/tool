@@ -104,6 +104,25 @@
     .submit-msg.ok { color: #1e8e3e; font-weight: bold; }
     .submit-msg.err { color: #d93025; font-weight: bold; }
     .backup-hint { font-size: 0.8rem; color: #888; margin-top: 6px; }
+    /* 送出用對話框 */
+    .dlg-card { max-width: 420px; }
+    .dlg-body { padding: 28px 24px 22px; text-align: center; color: #333; }
+    .dlg-icon { font-size: 3rem; line-height: 1; margin-bottom: 12px; }
+    .dlg-title { font-size: 1.3rem; font-weight: bold; margin-bottom: 10px; color: #202124; }
+    .dlg-title.ok { color: #1e8e3e; }
+    .dlg-title.err { color: #d93025; }
+    .dlg-text { font-size: 0.95rem; line-height: 1.7; color: #444; }
+    .dlg-text b { color: #c00; }
+    .dlg-notice { margin-top: 16px; padding: 12px 14px; background: #fff8e1; border: 1px solid #f9c74f; border-radius: 8px; font-size: 0.9rem; line-height: 1.6; color: #5f4300; text-align: left; }
+    .dlg-msgbox { margin-top: 10px; padding: 10px 12px; background: #f1f3f4; border-radius: 6px; font-size: 0.88rem; line-height: 1.6; color: #333; text-align: left; white-space: pre-wrap; word-break: break-all; user-select: all; }
+    .dlg-actions { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+    .dlg-actions button { flex: 1 1 140px; padding: 12px 16px; border-radius: 6px; border: none; font-size: 0.95rem; font-weight: bold; cursor: pointer; }
+    .dlg-btn-primary { background: #1a73e8; color: #fff; }
+    .dlg-btn-primary:hover { background: #1557b0; }
+    .dlg-btn-ok { background: #1e8e3e; color: #fff; }
+    .dlg-btn-ok:hover { background: #137333; }
+    .dlg-btn-light { background: #e8eaed; color: #333; }
+    .dlg-btn-light:hover { background: #dadce0; }
     /* 防機器人欄位：真人看不到 */
     .hp-field { position: absolute !important; left: -9999px !important; width: 1px; height: 1px; opacity: 0; }
 
@@ -197,6 +216,19 @@ Email："></textarea>
         </div>
         <div class="import-msg" id="importMsg"></div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- 送出用對話框 -->
+<div class="modal-overlay" id="dlgOverlay">
+  <div class="modal-card dlg-card" role="dialog" aria-modal="true">
+    <div class="dlg-body">
+      <div class="dlg-icon" id="dlgIcon"></div>
+      <div class="dlg-title" id="dlgTitle"></div>
+      <div class="dlg-text" id="dlgText"></div>
+      <div id="dlgExtra"></div>
+      <div class="dlg-actions" id="dlgActions"></div>
     </div>
   </div>
 </div>
@@ -676,19 +708,107 @@ async function getClientIp() {
   }
 }
 
+/* ---------- 對話框 ---------- */
+// opts: { icon, title, titleClass, text, extra(Node), buttons:[{label, cls, value}] } → Promise<value>
+function showDialog(opts) {
+  return new Promise(resolve => {
+    const overlay = document.getElementById('dlgOverlay');
+    document.getElementById('dlgIcon').textContent = opts.icon || '';
+    const t = document.getElementById('dlgTitle');
+    t.textContent = opts.title || '';
+    t.className = 'dlg-title' + (opts.titleClass ? ' ' + opts.titleClass : '');
+    document.getElementById('dlgText').innerHTML = opts.text || '';
+    const extra = document.getElementById('dlgExtra');
+    extra.innerHTML = '';
+    if (opts.extra) extra.appendChild(opts.extra);
+
+    const actions = document.getElementById('dlgActions');
+    actions.innerHTML = '';
+    const close = v => { overlay.style.display = 'none'; document.removeEventListener('keydown', onKey); resolve(v); };
+    const onKey = e => { if (e.key === 'Escape') close(null); };
+    (opts.buttons || [{ label: '好', cls: 'dlg-btn-primary', value: true }]).forEach(b => {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = b.cls || 'dlg-btn-light';
+      el.textContent = b.label;
+      el.onclick = () => (b.onClick ? b.onClick(el) : close(b.value));
+      actions.appendChild(el);
+    });
+    document.addEventListener('keydown', onKey);
+    overlay.style.display = 'flex';
+    const last = actions.lastElementChild;
+    if (last) last.focus();
+  });
+}
+
+function escHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function showSuccessDialog(caseName) {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const timeStr = `${d.getMonth() + 1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const notifyMsg = `您好，「${caseName}」的網站基本資料已於 ${timeStr} 送出，再麻煩確認，謝謝！`;
+
+  const box = document.createElement('div');
+  box.innerHTML =
+    '<div class="dlg-notice">📣 <b>最後一步：</b>請告知您的網站窗口「資料已送出」，我們才能盡快確認處理。可直接複製下方訊息，貼到 LINE 或 Email 傳給我們：</div>' +
+    `<div class="dlg-msgbox">${escHtml(notifyMsg)}</div>`;
+
+  return showDialog({
+    icon: '✅',
+    title: '資料已送出成功！',
+    titleClass: 'ok',
+    text: '感謝您撥空填寫。',
+    extra: box,
+    buttons: [
+      {
+        label: '📋 複製通知訊息', cls: 'dlg-btn-ok',
+        onClick: el => {
+          const done = () => { el.textContent = '✅ 已複製'; };
+          navigator.clipboard.writeText(notifyMsg).then(done).catch(() => {
+            const r = document.createRange();
+            r.selectNodeContents(box.querySelector('.dlg-msgbox'));
+            const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+            el.textContent = '請按 Ctrl+C 複製';
+          });
+        }
+      },
+      { label: '完成', cls: 'dlg-btn-light', value: true }
+    ]
+  });
+}
+
 async function submitData() {
   if (isSubmitting) return;                                     // 防連點：送出中直接擋
   const btn = document.getElementById('submitBtn');
   const key = JSON.stringify(currentData);
   if (key === lastSentKey) return;                              // 內容沒變不重送
 
-  if (!SUBMIT_ENDPOINT) { alert('送出功能尚未設定，請先使用「複製」或「下載文字檔」。'); return; }
-  if (!document.getElementById('caseName').value.trim()) { alert('請至少填寫「案名」再送出。'); return; }
+  if (!SUBMIT_ENDPOINT) {
+    await showDialog({ icon: '⚠️', title: '送出功能尚未開放', text: '請先使用下方「複製文字內容」或「下載文字檔」提供給我們。' });
+    return;
+  }
+  if (!document.getElementById('caseName').value.trim()) {
+    await showDialog({ icon: '✏️', title: '還差一點', text: '請至少填寫「<b>案名</b>」再送出。' });
+    document.getElementById('caseName').focus();
+    return;
+  }
 
   const wait = SUBMIT_COOLDOWN_MS - (Date.now() - lastSentAt);
   if (wait > 0) { setSubmitMsg(`請稍候 ${Math.ceil(wait / 1000)} 秒再送出`, 'err'); return; }
 
-  if (!confirm('確認資料無誤並送出？')) return;
+  const ok = await showDialog({
+    icon: '📤',
+    title: '確認送出資料？',
+    text: '請確認右側預覽內容無誤，<br>送出後我們就會收到這份資料。',
+    buttons: [
+      { label: '再檢查一下', cls: 'dlg-btn-light', value: false },
+      { label: '確認送出', cls: 'dlg-btn-primary', value: true }
+    ]
+  });
+  if (!ok || isSubmitting) return;
 
   isSubmitting = true;
   btn.disabled = true;
@@ -712,9 +832,22 @@ async function submitData() {
     if (!json.ok) throw new Error(json.msg || '送出失敗');
     lastSentKey = key;
     lastSentAt = Date.now();
-    setSubmitMsg('已送出，我們已收到資料，謝謝！', 'ok');
+    isSubmitting = false;
+    refreshSubmitState();
+    setSubmitMsg('已送出成功，記得通知您的網站窗口喔！', 'ok');
+    showSuccessDialog(document.getElementById('caseName').value.trim());
   } catch (err) {
-    setSubmitMsg('送出失敗：' + (err.message || '網路錯誤') + '，請改用下方「複製」或「下載文字檔」提供。', 'err');
+    isSubmitting = false;
+    refreshSubmitState();
+    const reason = (err && err.message && !/fetch|network|json/i.test(err.message)) ? err.message : '網路連線異常';
+    setSubmitMsg('送出失敗，請改用下方按鈕提供資料。', 'err');
+    showDialog({
+      icon: '❌',
+      title: '送出失敗',
+      titleClass: 'err',
+      text: `原因：${escHtml(reason)}<br><br>請稍後再試一次，或改用下方「<b>複製文字內容</b>」／「<b>下載文字檔</b>」提供給我們。`,
+      buttons: [{ label: '知道了', cls: 'dlg-btn-primary', value: true }]
+    });
   } finally {
     isSubmitting = false;
     refreshSubmitState();
