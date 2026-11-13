@@ -96,6 +96,16 @@
     button.copy-btn:hover { background: #380; }
     button.download-btn { background: #c00; color: white; border: none; padding: 14px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.95rem; transition: background .2s; }
     button.download-btn:hover { background: #900; }
+    button.submit-btn { background: #1a73e8; color: #fff; border: none; padding: 16px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1.05rem; transition: background .2s, opacity .2s; }
+    button.submit-btn:hover:not(:disabled) { background: #1557b0; }
+    button.submit-btn:disabled { cursor: not-allowed; opacity: .6; }
+    button.submit-btn.done { background: #1e8e3e; opacity: 1; }
+    .submit-msg { font-size: 0.85rem; margin-top: 4px; min-height: 1.2em; }
+    .submit-msg.ok { color: #1e8e3e; font-weight: bold; }
+    .submit-msg.err { color: #d93025; font-weight: bold; }
+    .backup-hint { font-size: 0.8rem; color: #888; margin-top: 6px; }
+    /* 防機器人欄位：真人看不到 */
+    .hp-field { position: absolute !important; left: -9999px !important; width: 1px; height: 1px; opacity: 0; }
 
     .float-nav-btn { display: none; position: fixed; bottom: 20px; right: 20px; z-index: 999; background: #690; color: #fff; border: none; border-radius: 30px; padding: 12px 20px; font-size: 0.9rem; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.25); cursor: pointer; transition: all 0.3s ease; }
     .float-nav-btn:active { transform: scale(0.95); }
@@ -317,13 +327,30 @@ Email："></textarea>
     </div>
 
     <div class="btn-group">
+      <input type="text" id="hpField" class="hp-field" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <button type="button" class="submit-btn" id="submitBtn" onclick="submitData()">✅ 確認無誤，送出資料</button>
+      <div class="submit-msg" id="submitMsg"></div>
+      <div class="backup-hint">若送出失敗，可改用下方按鈕複製或下載提供</div>
       <button class="copy-btn" onclick="copyText()">📋 一鍵複製文字內容</button>
-      <button class="download-btn" onclick="downloadTxt()">請下載文字檔提供</button>
+      <button class="download-btn" onclick="downloadTxt()">下載文字檔</button>
     </div>
   </div>
 </div>
 
 <script>
+/* ==========================================================
+   送出設定：部署 Google Apps Script 後，把「網頁應用程式網址」
+   （https://script.google.com/macros/s/xxxx/exec）貼在這裡
+   ========================================================== */
+const SUBMIT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzym1edGLQy9K0n-gWbUSol-eP25Sg-kOLPNryF2Hpd_red11UT2yCvcd1umb02O-lj/exec';
+
+const PAGE_LOADED_AT = Date.now();
+const SUBMIT_COOLDOWN_MS = 10000;   // 兩次送出最少間隔
+let currentData = {};
+let lastSentKey = '';
+let lastSentAt = 0;
+let isSubmitting = false;
+
 let generatedTxtOutput = '';
 let finalCleanUrl = '(未確認網址)';
 let currentTargetQuery = '';
@@ -611,6 +638,87 @@ function updateMeta() {
 `FB：${fbUrlVal}\r\n` +
 `GMAP：${gmapUrlVal}\r\n` +
 `Email：${emailsStr}`;
+
+  currentData = {
+    src: finalCleanUrl, title: fullTitle, description: descText, keyword: keywordsStr,
+    address: addressVal, phone: phoneVal, fb: fbUrlVal, gmap: gmapUrlVal, email: emailsStr
+  };
+  refreshSubmitState();
+}
+
+/* ---------- 送出資料 ---------- */
+function refreshSubmitState() {
+  const btn = document.getElementById('submitBtn');
+  if (!btn || isSubmitting) return;
+  const sameAsSent = lastSentKey && JSON.stringify(currentData) === lastSentKey;
+  btn.disabled = !!sameAsSent;
+  btn.classList.toggle('done', !!sameAsSent);
+  btn.textContent = sameAsSent ? '✅ 已送出' : (lastSentKey ? '🔄 資料有修改，重新送出' : '✅ 確認無誤，送出資料');
+}
+
+function setSubmitMsg(text, type) {
+  const el = document.getElementById('submitMsg');
+  el.textContent = text;
+  el.className = 'submit-msg' + (type ? ' ' + type : '');
+}
+
+async function getClientIp() {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 3000);
+  try {
+    const r = await fetch('https://api.ipify.org?format=json', { signal: ctrl.signal, cache: 'no-store' });
+    const j = await r.json();
+    return String(j.ip || '');
+  } catch (e) {
+    return '';
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function submitData() {
+  if (isSubmitting) return;                                     // 防連點：送出中直接擋
+  const btn = document.getElementById('submitBtn');
+  const key = JSON.stringify(currentData);
+  if (key === lastSentKey) return;                              // 內容沒變不重送
+
+  if (!SUBMIT_ENDPOINT) { alert('送出功能尚未設定，請先使用「複製」或「下載文字檔」。'); return; }
+  if (!document.getElementById('caseName').value.trim()) { alert('請至少填寫「案名」再送出。'); return; }
+
+  const wait = SUBMIT_COOLDOWN_MS - (Date.now() - lastSentAt);
+  if (wait > 0) { setSubmitMsg(`請稍候 ${Math.ceil(wait / 1000)} 秒再送出`, 'err'); return; }
+
+  if (!confirm('確認資料無誤並送出？')) return;
+
+  isSubmitting = true;
+  btn.disabled = true;
+  btn.textContent = '送出中…';
+  setSubmitMsg('', '');
+
+  try {
+    const ip = await getClientIp();
+    const res = await fetch(SUBMIT_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },   // 用 text/plain 避免 CORS 預檢
+      body: JSON.stringify({
+        ...currentData,
+        ip,
+        ua: navigator.userAgent.slice(0, 200),
+        hp: document.getElementById('hpField').value,
+        elapsed: Date.now() - PAGE_LOADED_AT
+      })
+    });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.msg || '送出失敗');
+    lastSentKey = key;
+    lastSentAt = Date.now();
+    setSubmitMsg('已送出，我們已收到資料，謝謝！', 'ok');
+  } catch (err) {
+    setSubmitMsg('送出失敗：' + (err.message || '網路錯誤') + '，請改用下方「複製」或「下載文字檔」提供。', 'err');
+  } finally {
+    isSubmitting = false;
+    refreshSubmitState();
+  }
 }
 
 function copyText() {
